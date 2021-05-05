@@ -364,7 +364,7 @@ def solve_batch(b, S, Y, WX, YTYpR, batch_size, m, f, dtype):
     return X_stack
 
 
-def compute_factor_wmf_deep(Y, S, lambda_reg, content_prior=None, dtype='float32', batch_size=10000, n_jobs=-1):
+def compute_factor_wmf_deep(Y, S, lambda_reg, content_prior=None, dtype='float32', batch_size=1000, n_jobs=-1):
 
     m = S.shape[0]  # m = number of users (or items if tranposed beforehand)
     f = Y.shape[1]  # f = number of factors

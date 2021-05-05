@@ -128,7 +128,7 @@ if __name__ == '__main__':
     # Set parameters
     params = {'batch_size': 128,
               'n_embeddings': 128,
-              'n_epochs': 2,
+              'n_epochs': 100,
               'lr': 1e-4,
               'n_features_hidden': 1024,
               'n_features_in': 168,
