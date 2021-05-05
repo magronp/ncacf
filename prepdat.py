@@ -45,9 +45,9 @@ def load_filter_record_tp(data_dir='data/', min_uc=20, min_sc=50, min_c=5):
 
     # Only keep the triplets for songs which were listened to by at least min_sc users, and at least min_sc times
     songcount = get_count(tp, 'sid')
-    tp = tp[tp['sid'].isin(songcount.index[songcount.values >= min_sc])]
+    tp = tp[tp['sid'].isin(songcount.index[songcount >= min_sc])]
     usercount = get_count(tp, 'uid')
-    tp = tp[tp['uid'].isin(usercount.index[usercount.values >= min_uc])]
+    tp = tp[tp['uid'].isin(usercount.index[usercount >= min_uc])]
 
     # Record TP
     tp.to_csv(data_dir + 'tp.csv', index=False)
