@@ -1,0 +1,193 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import torch
+from tqdm import tqdm
+import numpy as np
+import os
+from scipy import sparse
+from helpers.utils import my_ndcg_out, my_ndcg_in
+from helpers.data_feeder import load_tp_data, DatasetAttributes
+from torch.utils.data import DataLoader
+
+
+def evaluate_random(params):
+
+    # Paths for TP test data
+    tp_path = os.path.join(params['data_dir'], 'test_tp.num.csv')
+
+    # Get the number of users and songs in the eval set (necessarily the test set for random predictions)
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    n_songs = int(np.ceil(0.1 * n_songs_total))
+
+    # Predict the attributes and ratings
+    pred_ratings = np.random.rand(n_users, n_songs)
+
+    # Load the evaluation subset true ratings
+    eval_data, rows_eval, cols_eval, _ = load_tp_data(tp_path, shape=(n_users, n_songs_total))
+    cols_eval -= cols_eval.min()
+    eval_data = sparse.csr_matrix((eval_data.data, (rows_eval, cols_eval)), dtype=np.int16, shape=(n_users, n_songs))
+
+    # Get the score
+    ndcg_mean = my_ndcg_out(eval_data, pred_ratings, k=50)
+
+    return ndcg_mean
+
+
+def predict_attributes(my_model, my_data_loader, n_songs, n_embeddings, device):
+
+    my_model = my_model.to(device)
+    # Compute the model output (predicted attributes)
+    predicted_attributes = torch.zeros([n_songs, n_embeddings]).to(device)
+    my_model.eval()
+    with torch.no_grad():
+        for data in tqdm(my_data_loader, desc='Computing predicted attributes', unit=' Songs'):
+            predicted_attributes[data[2].to(device), :] = my_model(data[0].to(device))
+
+    predicted_attributes = predicted_attributes.cpu().detach().numpy()
+
+    return predicted_attributes
+
+
+def evaluate_mf_hybrid(params, W, my_model, split='val'):
+
+    # Paths for features and TP
+    path_features = os.path.join(params['data_dir'], split + '_feats.num.csv')
+    path_tp_eval = os.path.join(params['data_dir'], split + '_tp.num.csv')
+
+    # Get the number of users and songs in the eval set as well as the dataset for evaluation
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    if split == 'val':
+        n_songs = int(0.2 * n_songs_total)
+    else:
+        n_songs = int(np.ceil(0.1 * n_songs_total))
+
+    # Predict the attributes and ratings
+    # Define a data loader
+    my_dataset = DatasetAttributes(wmf_path=None, features_path=path_features)
+    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=False, drop_last=False)
+
+    pred_attributes = predict_attributes(my_model, my_dataloader, n_songs, params['n_embeddings'], params['device'])
+    pred_ratings = W.dot(pred_attributes.T)
+
+    # Load the evaluation subset true ratings
+    eval_data, rows_eval, cols_eval, _ = load_tp_data(path_tp_eval, shape=(n_users, n_songs_total))
+    cols_eval -= cols_eval.min()
+    eval_data = sparse.csr_matrix((eval_data.data, (rows_eval, cols_eval)), dtype=np.int16, shape=(n_users, n_songs))
+
+    # Get the score
+    ndcg_mean = my_ndcg_out(eval_data, pred_ratings, k=50)
+
+    return ndcg_mean
+
+
+def evaluate_mf_hybrid_in(params, W, my_model, split='val'):
+
+    # Get the number of users and songs in the eval set as well as the dataset for evaluation
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+
+    # Feature path - data loader
+    path_features = os.path.join(params['data_dir'], 'feats.num.csv')
+    my_dataset = DatasetAttributes(wmf_path=None, features_path=path_features)
+    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=False, drop_last=False)
+
+    # Predict attributes and binary playcounts
+    pred_attributes = predict_attributes(my_model, my_dataloader, n_songs_total, params['n_embeddings'], params['device'])
+    pred_ratings = W.dot(pred_attributes.T)
+
+    # Load playcount data
+    path_tp_train = os.path.join(params['data_dir'], 'train_tp.num.csv')
+    path_tp_val = os.path.join(params['data_dir'], 'val_tp.num.csv')
+    path_tp_test = os.path.join(params['data_dir'], 'test_tp.num.csv')
+
+    train_data = load_tp_data(path_tp_train, shape=(n_users, n_songs_total))[0]
+    val_data = load_tp_data(path_tp_val, shape=(n_users, n_songs_total))[0]
+    test_data = load_tp_data(path_tp_test, shape=(n_users, n_songs_total))[0]
+
+    # Get the score
+    if split == 'val':
+        ndcg_mean = my_ndcg_in(val_data, pred_ratings, k=50, leftout_ratings=train_data)[0]
+    else:
+        ndcg_mean = my_ndcg_in(test_data, pred_ratings, k=50, leftout_ratings=train_data+val_data)[0]
+
+    return ndcg_mean
+
+
+def evaluate_uni(params, my_model, split='val'):
+
+    # Paths for features and TP
+    path_features = os.path.join(params['data_dir'], split + '_feats.num.csv')
+    tp_path = os.path.join(params['data_dir'], split + '_tp.num.csv')
+
+    # Get the number of users and songs in the eval set as well as the dataset for evaluation
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    if split == 'val':
+        n_songs = int(0.2 * n_songs_total)
+    else:
+        n_songs = int(np.ceil(0.1 * n_songs_total))
+
+    # Predict the attributes and ratings
+    # Define a data loader
+    my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
+    my_dataloader_eval = DataLoader(my_dataset_eval, 1, shuffle=False, drop_last=False)
+
+    # Compute the model output (predicted ratings)
+    us_total = torch.arange(0, n_users, dtype=torch.long).to(params['device'])
+    pred_ratings = np.zeros((n_users, n_songs))
+    it_inp = torch.tensor([-1], dtype=torch.long).to(params['device'])
+    my_model.eval()
+    with torch.no_grad():
+        for data in tqdm(my_dataloader_eval, desc='Computing predicted ratings', unit=' Songs'):
+            pred = my_model(us_total, data[0].to(params['device']), it_inp)[0]
+            pred_ratings[:, data[2]] = pred.cpu().detach().numpy().squeeze()
+
+    # Load the evaluation subset true ratings
+    eval_data, rows_eval, cols_eval, _ = load_tp_data(tp_path, shape=(n_users, n_songs_total))
+    cols_eval -= cols_eval.min()
+    eval_data = sparse.csr_matrix((eval_data.data, (rows_eval, cols_eval)), dtype=np.int16, shape=(n_users, n_songs))
+
+    # Get the score
+    ndcg_mean = my_ndcg_out(eval_data, pred_ratings, k=50)
+
+    return ndcg_mean
+
+
+def evaluate_uni_train(params, my_model):
+
+    # Paths for features and TP
+    path_features = os.path.join(params['data_dir'], 'train_feats.num.csv')
+    tp_path = os.path.join(params['data_dir'], 'train_tp.num.csv')
+
+    # Get the number of users and songs in the eval set as well as the dataset for evaluation
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    n_songs = int(0.7 * n_songs_total)
+
+    # Predict the attributes and ratings
+    # Define a data loader
+    my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
+    my_dataloader_eval = DataLoader(my_dataset_eval, 1, shuffle=False, drop_last=False)
+
+    # Compute the model output (predicted ratings)
+    us_total = torch.arange(0, n_users).to(params['device'])
+    pred_ratings = np.zeros((n_users, n_songs))
+    my_model.eval()
+    with torch.no_grad():
+        for data in tqdm(my_dataloader_eval, desc='Computing predicted ratings', unit=' Songs'):
+            pred = my_model(us_total, data[0].to(params['device']), data[2].to(params['device']))[0]
+            pred_ratings[:, data[2]] = pred.cpu().detach().numpy().squeeze()
+
+    # Load the evaluation subset true ratings
+    eval_data, rows_eval, cols_eval, _ = load_tp_data(tp_path, shape=(n_users, n_songs_total))
+    cols_eval -= cols_eval.min()
+    eval_data = sparse.csr_matrix((eval_data.data, (rows_eval, cols_eval)), dtype=np.int16, shape=(n_users, n_songs))
+
+    # Get the score
+    ndcg_mean = my_ndcg_out(eval_data, pred_ratings, k=50)
+
+    return ndcg_mean
+
