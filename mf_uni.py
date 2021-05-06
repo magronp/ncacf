@@ -6,12 +6,13 @@ import torch
 from helpers.utils import create_folder, get_optimal_val_model_relaxed, get_optimal_val_model_strict
 from helpers.utils import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 from helpers.training import train_mf_uni_out
+from helpers.eval import evaluate_uni
 
 
 def train_val_mf_uni_out(params, range_lW, range_lH):
 
     path_current = 'outputs/out/mf_uni/'
-    '''
+
     # Pretraining with grid search on the hyperparameters
     # Relaxed variant
     variant = 'relaxed'
@@ -32,7 +33,6 @@ def train_val_mf_uni_out(params, range_lW, range_lH):
         params['out_dir'] = path_current + variant + '/lW_' + str(lW) + '/'
         create_folder(params['out_dir'])
         train_mf_uni_out(params, variant=variant)
-    '''
     get_optimal_val_model_strict(path_current, range_lW, params['n_epochs'])
 
     return
@@ -58,17 +58,17 @@ def train_noval_mf_uni_strict_out(params, lW=0.1):
     return
 
 
-'''
-def train_all_mf_uni(params):
+def test_mf_uni(params):
 
+    path_current = 'outputs/out/mf_uni/'
     for variant in ['relaxed', 'strict']:
-        params['out_dir'] = 'outputs/MFUni/' + variant + '/'
-        create_folder(params['out_dir'])
-        path_pretrain = 'outputs/pretraining_uni/' + variant + '/'
-        train_mf_uni(params, path_pretrain=path_pretrain, variant=variant)
+        my_model = torch.load(path_current + variant + '/model.pt')
+        print('Variant: ' + variant)
+        print('NDCG: ' + evaluate_uni(params, my_model, split='test'))
+        print('Time: ' + np.load(path_current + variant + '/training.npz')['time'])
 
     return
-'''
+
 
 if __name__ == '__main__':
 
@@ -91,28 +91,24 @@ if __name__ == '__main__':
               'device': device
               }
 
+    train_mfuni = True
     val_lambda = True
-    if val_lambda:
-        # Training and validation for the hyperparameters
-        range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
-        train_val_mf_uni_out(params, range_lW, range_lH)
 
-        # Plot the validation results
-        plot_val_ndcg_lW_lH('outputs/out/mf_uni/relaxed/')
-        plot_val_ndcg_lW('outputs/out/mf_uni/strict/')
-    else:
-        # Single training with pre-defined hyperparameter
-        train_noval_mf_uni_relaxed_out(params, lW=0.1, lH=1.)
-        train_noval_mf_uni_strict_out(params, lW=1.)
+    if train_mfuni:
+        if val_lambda:
+            # Training and validation for the hyperparameters
+            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
+            train_val_mf_uni_out(params, range_lW, range_lH)
+
+            # Plot the validation results
+            plot_val_ndcg_lW_lH('outputs/out/mf_uni/relaxed/')
+            plot_val_ndcg_lW('outputs/out/mf_uni/strict/')
+        else:
+            # Single training with pre-defined hyperparameter
+            train_noval_mf_uni_relaxed_out(params, lW=0.1, lH=1.)
+            train_noval_mf_uni_strict_out(params, lW=1.)
 
     # Test
-    '''
-    my_model = torch.load('outputs/MFUni/relaxed/model.pt')
-    print(evaluate_uni(params, my_model, split='test'))
-    print(np.load('outputs/MFUni/relaxed/training.npz')['time'] + np.load('outputs/pretraining_uni/relaxed/training.npz')['time'])
-    my_model = torch.load('outputs/MFUni/strict/model.pt')
-    print(evaluate_uni(params, my_model, split='test'))
-    print(np.load('outputs/MFUni/strict/training.npz')['time'] + np.load('outputs/pretraining_uni/strict/training.npz')['time'])
-    '''
+    test_mf_uni(params)
 
 # EOF
