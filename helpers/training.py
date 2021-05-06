@@ -389,7 +389,7 @@ def train_mf_uni_out(params, variant='relaxed'):
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelMFuni(n_users, n_songs_train, params['n_embeddings'], params['n_features_in'],
-                          params['n_features_hidden'], variant)
+                          params['n_features_hidden'], variant, params['out_sigm'])
     my_model.requires_grad_(True)
     my_model.to(params['device'])
 

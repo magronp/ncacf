@@ -27,12 +27,17 @@ class ModelAttributes(Module):
 
 class ModelMFuni(Module):
 
-    def __init__(self, n_users, n_songs, n_embeddings, n_features_in, n_features_hidden, mod):
+    def __init__(self, n_users, n_songs, n_embeddings, n_features_in, n_features_hidden, mod, out_sigm=False):
 
         super(ModelMFuni, self).__init__()
 
         # Define if the model variant is strict, relaxed, or sum
         self.mod = mod
+
+        if out_sigm:
+            self.func_act_out = Sigmoid()
+        else:
+            self.func_act_out = Identity()
 
         # Item content extractor
         self.fnn_in = Sequential(Linear(n_features_in, n_features_hidden, bias=True), ReLU())
@@ -67,7 +72,7 @@ class ModelMFuni(Module):
                 h = self.item_emb(i)
 
         # Interaction model
-        pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
+        pred_rat = self.func_act_out(torch.matmul(h, torch.transpose(w, 0, 1)))
 
         return pred_rat, w, h, h_con
 

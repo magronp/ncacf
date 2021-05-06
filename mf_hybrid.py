@@ -135,24 +135,28 @@ if __name__ == '__main__':
               'data_dir': 'data/out/',
               'device': device}
 
-    val_lambda = True
-    if val_lambda:
-        # Training and validation for the hyperparameters
-        range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
-        train_val_mh_hybrid_out(params, range_lW, range_lH)
+    train_mfuni = False
+    val_mfuni = True
 
-        # Plot the validation results
-        plot_val_ndcg_lW_lH('outputs/out/mf_hybrid/relaxed/')
-        plot_val_ndcg_lW('outputs/out/mf_hybrid/strict/')
+    if train_mfuni:
+        if val_mfuni:
+            # Training and validation for the hyperparameters
+            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
+            train_val_mh_hybrid_out(params, range_lW, range_lH)
 
-        # Check what happens if ep_it varies
-        train_mh_hybrid_out_epiter(params)
-        check_mh_hybrid_out_epiter(params, variant='relaxed')
-        check_mh_hybrid_out_epiter(params, variant='strict')
-    else:
-        # Single training with pre-defined hyperparameter
-        train_noval_mf_hybrid_relaxed_out(params, lW=0.1, lH=1.)
-        train_noval_mf_hybrid_strict_out(params, lW=1.)
+            # Check what happens if ep_it varies and display the results on the test set
+            train_mh_hybrid_out_epiter(params)
+            check_mh_hybrid_out_epiter(params, variant='relaxed')
+            check_mh_hybrid_out_epiter(params, variant='strict')
+        else:
+            # Single training with pre-defined hyperparameter
+            train_noval_mf_hybrid_relaxed_out(params, lW=0.1, lH=1.)
+            train_noval_mf_hybrid_strict_out(params, lW=1.)
 
+    # Plot the validation results
+    plot_val_ndcg_lW_lH('outputs/out/mf_hybrid/relaxed/')
+    plot_val_ndcg_lW('outputs/out/mf_hybrid/strict/')
+
+    # Test
 
 # EOF
