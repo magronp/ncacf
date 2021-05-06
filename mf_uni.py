@@ -7,6 +7,7 @@ from helpers.utils import create_folder, get_optimal_val_model_relaxed, get_opti
 from helpers.utils import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 from helpers.training import train_mf_uni_out
 from helpers.eval import evaluate_uni
+from helpers.models import ModelMFuni
 
 
 def train_val_mf_uni_out(params, range_lW, range_lH):
@@ -61,8 +62,12 @@ def train_noval_mf_uni_strict_out(params, lW=0.1):
 def test_mf_uni(params):
 
     path_current = 'outputs/out/mf_uni/'
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs_train = int(0.7 * len(open(params['data_dir'] + 'unique_sid.txt').readlines()))
     for variant in ['relaxed', 'strict']:
-        my_model = torch.load(path_current + variant + '/model.pt')
+        my_model = ModelMFuni(n_users, n_songs_train, params['n_embeddings'], params['n_features_in'],
+                              params['n_features_hidden'], variant)
+        my_model.load_state_dict(torch.load(path_current + variant + '/model.pt'))
         print('Variant: ' + variant)
         print('NDCG: ' + evaluate_uni(params, my_model, split='test'))
         print('Time: ' + np.load(path_current + variant + '/training.npz')['time'])
@@ -91,7 +96,7 @@ if __name__ == '__main__':
               'device': device
               }
 
-    train_mfuni = True
+    train_mfuni = False
     val_lambda = True
 
     if train_mfuni:
