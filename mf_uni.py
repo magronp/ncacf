@@ -11,7 +11,7 @@ from helpers.training import train_mf_uni_out
 def train_val_mf_uni_out(params, range_lW, range_lH):
 
     path_current = 'outputs/out/mf_uni/'
-
+    '''
     # Pretraining with grid search on the hyperparameters
     # Relaxed variant
     variant = 'relaxed'
@@ -29,9 +29,10 @@ def train_val_mf_uni_out(params, range_lW, range_lH):
     for lW in range_lW:
         print(lW)
         params['lW'], params['lH'] = lW, 0.
-        params['out_dir'] = path_current + variant + 'lW_' + str(lW) + '/'
+        params['out_dir'] = path_current + variant + '/lW_' + str(lW) + '/'
         create_folder(params['out_dir'])
         train_mf_uni_out(params, variant=variant)
+    '''
     get_optimal_val_model_strict(path_current, range_lW, params['n_epochs'])
 
     return
