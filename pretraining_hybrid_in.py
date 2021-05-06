@@ -37,7 +37,6 @@ def pretrain_relaxed(params):
     # Model parameters and definition
     my_model = ModelAttributes(params['n_features_in'], params['n_features_hidden'],
                                params['n_embeddings']).to(params['device'])
-    my_model.apply(init_weights)
     print('Amount of parameters: {}'.format(sum([p.numel() for p in my_model.parameters()])), flush=True)
 
     print('\n Update WMF factors...')

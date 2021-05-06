@@ -99,13 +99,9 @@ def evaluate_mf_hybrid_in(params, W, my_model, split='val'):
     pred_ratings = W.dot(pred_attributes.T)
 
     # Load playcount data
-    path_tp_train = os.path.join(params['data_dir'], 'train_tp.num.csv')
-    path_tp_val = os.path.join(params['data_dir'], 'val_tp.num.csv')
-    path_tp_test = os.path.join(params['data_dir'], 'test_tp.num.csv')
-
-    train_data = load_tp_data(path_tp_train, shape=(n_users, n_songs_total))[0]
-    val_data = load_tp_data(path_tp_val, shape=(n_users, n_songs_total))[0]
-    test_data = load_tp_data(path_tp_test, shape=(n_users, n_songs_total))[0]
+    train_data = load_tp_data(os.path.join(params['data_dir'], 'train_tp.num.csv'), shape=(n_users, n_songs_total))[0]
+    val_data = load_tp_data(os.path.join(params['data_dir'], 'val_tp.num.csv'), shape=(n_users, n_songs_total))[0]
+    test_data = load_tp_data(os.path.join(params['data_dir'], 'test_tp.num.csv'), shape=(n_users, n_songs_total))[0]
 
     # Get the score
     if split == 'val':
@@ -116,7 +112,7 @@ def evaluate_mf_hybrid_in(params, W, my_model, split='val'):
     return ndcg_mean
 
 
-def evaluate_uni(params, my_model, split='val'):
+def evaluate_uni_out(params, my_model, split='val'):
 
     # Paths for features and TP
     path_features = os.path.join(params['data_dir'], split + '_feats.num.csv')
@@ -152,6 +148,53 @@ def evaluate_uni(params, my_model, split='val'):
 
     # Get the score
     ndcg_mean = my_ndcg_out(eval_data, pred_ratings, k=50)
+
+    return ndcg_mean
+
+
+def evaluate_uni_in(params, my_model, split='val'):
+
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+
+    # Paths for features
+    path_features = os.path.join(params['data_dir'], 'feats.num.csv')
+
+    # Predict the attributes and ratings
+    # Define a data loader
+    my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
+    my_dataloader_eval = DataLoader(my_dataset_eval, 1, shuffle=False, drop_last=False)
+
+    # Compute the model output
+    us_total = torch.arange(0, n_users, dtype=torch.long).to(params['device'])
+    pred_ratings = np.zeros((n_users, n_songs_total))
+    #it_inp = torch.tensor([-1], dtype=torch.long).to(params['device'])
+    my_model.eval()
+    with torch.no_grad():
+        for data in tqdm(my_dataloader_eval, desc='Computing predicted ratings', unit=' Songs'):
+            pred = my_model(us_total, data[0].to(params['device']), data[2].to(params['device']))[0]
+            pred_ratings[:, data[2]] = pred.cpu().detach().numpy().squeeze()
+
+    # Load playcount data
+    train_data = load_tp_data(os.path.join(params['data_dir'], 'train_tp.num.csv'), shape=(n_users, n_songs_total))[0]
+    val_data = load_tp_data(os.path.join(params['data_dir'], 'val_tp.num.csv'), shape=(n_users, n_songs_total))[0]
+    test_data = load_tp_data(os.path.join(params['data_dir'], 'test_tp.num.csv'), shape=(n_users, n_songs_total))[0]
+
+    # Get the score
+    if split == 'val':
+        ndcg_mean = my_ndcg_in(val_data, pred_ratings, k=50, leftout_ratings=train_data)[0]
+    else:
+        ndcg_mean = my_ndcg_in(test_data, pred_ratings, k=50, leftout_ratings=train_data+val_data)[0]
+
+    return ndcg_mean
+
+
+def evaluate_uni(params, my_model, in_out='out', split='val'):
+
+    if in_out == 'out':
+        ndcg_mean = evaluate_uni_out(params, my_model, split=split)
+    else:
+        ndcg_mean = evaluate_uni_in(params, my_model, split=split)
 
     return ndcg_mean
 

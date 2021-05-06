@@ -10,14 +10,14 @@ __author__ = 'Paul Magron -- IRIT, Université de Toulouse, CNRS, France'
 __docformat__ = 'reStructuredText'
 
 
-def train_val_2stages_out(params, range_lW, range_lH):
+def train_val_2stages_out(path_current, params, range_lW, range_lH):
 
     # Loop over hyperparameters
     for lW in range_lW:
         for lH in range_lH:
             print(lW, lH)
             params['lW'], params['lH'] = lW, lH
-            params['out_dir'] = 'outputs/out/2stages/lW_' + str(lW) + '/lH_' + str(lH) + '/'
+            params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
             create_folder(params['out_dir'])
             # First train the WMF
             train_wmf(params)
@@ -26,17 +26,17 @@ def train_val_2stages_out(params, range_lW, range_lH):
             train_2stages_strict(params)
 
     # Get the optimal models after grid search
-    get_optimal_2stages(range_lW, range_lH, params['n_epochs'], variant='relaxed')
-    get_optimal_2stages(range_lW, range_lH, params['n_epochs'], variant='strict')
+    get_optimal_2stages(path_current, range_lW, range_lH, params['n_epochs'], variant='relaxed')
+    get_optimal_2stages(path_current, range_lW, range_lH, params['n_epochs'], variant='strict')
 
     return
 
 
-def train_noval_2stages_out(params, lW=0.1, lH=1.):
+def train_noval_2stages_out(path_current, params, lW=0.1, lH=1.):
 
     # Loop over hyperparameters
     params['lW'], params['lH'] = lW, lH
-    params['out_dir'] = 'outputs/out/2stages/noval/'
+    params['out_dir'] = path_current + 'noval/'
     create_folder(params['out_dir'])
     # First train the WMF
     train_wmf(params)
@@ -47,9 +47,8 @@ def train_noval_2stages_out(params, lW=0.1, lH=1.):
     return
 
 
-def get_optimal_2stages(range_lW, range_lH, n_epochs, variant='relaxed'):
+def get_optimal_2stages(path_current, range_lW, range_lH, n_epochs, variant='relaxed'):
 
-    path_current = 'outputs/out/2stages/'
     path_out = path_current + variant + '/'
     create_folder(path_out)
 
@@ -94,7 +93,7 @@ if __name__ == '__main__':
     # Set parameters
     params = {'batch_size': 128,
               'n_embeddings': 128,
-              'n_iter_wmf': 100,
+              'n_iter_wmf': 30,
               'n_epochs': 100,
               'lr': 1e-4,
               'n_features_hidden': 1024,
@@ -102,18 +101,21 @@ if __name__ == '__main__':
               'data_dir': 'data/out/',
               'device': device}
 
-    val_lambda = True
-    if val_lambda:
-        # Training and validation for the hyperparameters
-        range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-        train_val_2stages_out(params, range_lW, range_lH)
+    path_current = 'outputs/out/2stages/'
+    train_b = False
+    val_b = True
 
-        # Plot the validation results
-        plot_val_ndcg_lW_lH('outputs/out/2stages/relaxed/')
-        plot_val_ndcg_lW_lH('outputs/out/2stages/strict/')
+    if train_b:
+        if val_b:
+            # Training and validation for the hyperparameters
+            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            train_val_2stages_out(path_current, params, range_lW, range_lH)
+        else:
+            # Single training with pre-defined hyperparameter
+            train_noval_2stages_out(path_current, params, lW=0.1, lH=1.)
 
-    else:
-        # Single training with pre-defined hyperparameter
-        train_noval_2stages_out(params, lW=0.1, lH=1.)
+    # Plot the validation results
+    plot_val_ndcg_lW_lH(path_current + 'relaxed/')
+    plot_val_ndcg_lW_lH(path_current + 'strict/')
 
 # EOF

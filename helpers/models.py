@@ -105,7 +105,7 @@ class ModelNCACF(Module):
         # User embedding
         self.user_emb = Embedding(n_users, n_embeddings)
         self.user_emb.weight.data.data.normal_(0, 0.01)
-        # Item embedding (for the relaxed and sum models)
+        # Item embedding (for the relaxed models)
         if self.variant == 'relaxed':
             self.item_emb = Embedding(n_songs, n_embeddings)
             self.item_emb.weight.data.data.normal_(0, 0.01)
@@ -175,5 +175,66 @@ class ModelNCACF(Module):
 
         return pred_rat, w, h, h_con
 
+
+class ModelNCF(Module):
+
+    def __init__(self, n_users, n_songs, n_embeddings):
+
+        super(ModelNCF, self).__init__()
+
+        # Define the model variant (strict or relaxed) and interaction (multiplication or concatenation)
+        self.n_users = n_users
+
+        # User and item embedding
+        self.user_emb_gmf = Embedding(n_users, n_embeddings)
+        self.item_emb_gmf = Embedding(n_songs, n_embeddings)
+        self.user_emb_gmf.weight.data.data.normal_(0, 0.01)
+        self.item_emb_gmf.weight.data.data.normal_(0, 0.01)
+
+        # Same for the MLP part
+        self.user_emb_mlp = Embedding(n_users, n_embeddings)
+        self.item_emb_mlp = Embedding(n_songs, n_embeddings)
+        self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
+        self.item_emb_mlp.weight.data.data.normal_(0, 0.01)
+
+
+        # Deep interaction layers
+        self.n_features_di_in = n_embeddings * 2
+
+        # First create the intermediate layers
+        self.di1 = Sequential(Linear(n_embeddings * 2, n_embeddings, bias=True), ReLU())
+        self.di2 = Sequential(Linear(n_embeddings, n_embeddings // 2, bias=True))
+
+        # Output layer
+        self.out_layer = Sequential(Linear(3 * n_embeddings //2, 1, bias=False), Sigmoid())
+
+    def forward(self, u, x, i):
+
+        # Get the user/item factors
+        w_gmf = self.user_emb_gmf(u)
+        h_gmf = self.item_emb_gmf(i)
+        w_mlp = self.user_emb_mlp(u)
+        h_mlp = self.item_emb_mlp(i)
+
+        # Get the GMF output
+        emb_gmf = w_gmf.unsqueeze(1) * h_gmf
+
+        # Get the MLP output
+        # Concatenate and reshape
+        emb_mlp = torch.cat((w_mlp.unsqueeze(1).expand(*[-1, h_mlp.shape[0], -1]),
+                              h_mlp.unsqueeze(0).expand(*[self.n_users, -1, -1])), dim=-1)
+        emb_mlp = emb_mlp.view(-1, self.n_features_di_in)
+        # Deep interaction
+        emb_mlp = self.di1(emb_mlp)
+        emb_mlp = self.di2(emb_mlp)
+
+        # Concatenate embeddings and feed to the output layer
+        emb_conc = torch.cat((emb_gmf.unsqueeze(1).expand(*[-1, emb_mlp.shape[0], -1]),
+                              emb_mlp.unsqueeze(0).expand(*[self.n_users, -1, -1])), dim=-1)
+        pred_rat = self.out_layer(emb_conc)
+        # Reshape as (n_users, batch_size)
+        pred_rat = pred_rat.view(self.n_users, -1)
+
+        return pred_rat, w_gmf, h_gmf, w_mlp, h_mlp
 
 # EOF
