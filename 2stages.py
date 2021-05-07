@@ -102,7 +102,7 @@ if __name__ == '__main__':
               'device': device}
 
     path_current = 'outputs/out/2stages/'
-    train_b = False
+    train_b = True
     val_b = True
 
     if train_b:
