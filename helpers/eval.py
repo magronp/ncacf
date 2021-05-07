@@ -50,7 +50,7 @@ def predict_attributes(my_model, my_data_loader, n_songs, n_embeddings, device):
     return predicted_attributes
 
 
-def evaluate_mf_hybrid(params, W, my_model, split='val'):
+def evaluate_mf_hybrid_out(params, W, my_model, split='val'):
 
     # Paths for features and TP
     path_features = os.path.join(params['data_dir'], split + '_feats.num.csv')
@@ -83,20 +83,23 @@ def evaluate_mf_hybrid(params, W, my_model, split='val'):
     return ndcg_mean
 
 
-def evaluate_mf_hybrid_in(params, W, my_model, split='val'):
+def evaluate_mf_hybrid_in(params, W, H, my_model, variant='relaxed', split='val'):
 
     # Get the number of users and songs in the eval set as well as the dataset for evaluation
     n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
     n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
 
-    # Feature path - data loader
-    path_features = os.path.join(params['data_dir'], 'feats.num.csv')
-    my_dataset = DatasetAttributes(wmf_path=None, features_path=path_features)
-    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=False, drop_last=False)
-
-    # Predict attributes and binary playcounts
-    pred_attributes = predict_attributes(my_model, my_dataloader, n_songs_total, params['n_embeddings'], params['device'])
-    pred_ratings = W.dot(pred_attributes.T)
+    # The attributes need to be predicted only for the 'strict' variant (since there is no H)
+    if variant == 'strict':
+        # Feature path - data loader
+        path_features = os.path.join(params['data_dir'], 'feats.num.csv')
+        my_dataset = DatasetAttributes(wmf_path=None, features_path=path_features)
+        my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=False, drop_last=False)
+        # Predict attributes and binary playcounts
+        pred_attributes = predict_attributes(my_model, my_dataloader, n_songs_total, params['n_embeddings'], params['device'])
+        pred_ratings = W.dot(pred_attributes.T)
+    else:
+        pred_ratings = W.dot(H.T)
 
     # Load playcount data
     train_data = load_tp_data(os.path.join(params['data_dir'], 'train_tp.num.csv'), shape=(n_users, n_songs_total))[0]
@@ -108,6 +111,16 @@ def evaluate_mf_hybrid_in(params, W, my_model, split='val'):
         ndcg_mean = my_ndcg_in(val_data, pred_ratings, k=50, leftout_ratings=train_data)[0]
     else:
         ndcg_mean = my_ndcg_in(test_data, pred_ratings, k=50, leftout_ratings=train_data+val_data)[0]
+
+    return ndcg_mean
+
+
+def evaluate_mf_hybrid(params, W, H, my_model, in_out='out', variant='relaxed', split='val'):
+
+    if in_out == 'out':
+        ndcg_mean = evaluate_mf_hybrid_out(params, W, my_model, split=split)
+    else:
+        ndcg_mean = evaluate_mf_hybrid_in(params, W, H, my_model, variant=variant, split=split)
 
     return ndcg_mean
 

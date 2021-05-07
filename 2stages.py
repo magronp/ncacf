@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from helpers.utils import create_folder, plot_val_ndcg_lW_lH
-from helpers.training import train_wmf, train_2stages_relaxed, train_2stages_strict
+from helpers.training import train_wmf, train_2stages
+from helpers.eval import evaluate_mf_hybrid
 import numpy as np
 import torch
 
@@ -10,39 +11,35 @@ __author__ = 'Paul Magron -- IRIT, Université de Toulouse, CNRS, France'
 __docformat__ = 'reStructuredText'
 
 
-def train_val_2stages_out(path_current, params, range_lW, range_lH):
+def train_main_2stages(in_out_list, variant_list, params, range_lW, range_lH, data_dir='data/'):
 
-    # Loop over hyperparameters
-    for lW in range_lW:
-        for lH in range_lH:
-            print(lW, lH)
-            params['lW'], params['lH'] = lW, lH
-            params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
-            create_folder(params['out_dir'])
-            # First train the WMF
-            train_wmf(params)
-            # Then train the relaxed and strict variant on top of these WMFs
-            train_2stages_relaxed(params)
-            train_2stages_strict(params)
+    for in_out in in_out_list:
 
-    # Get the optimal models after grid search
-    get_optimal_2stages(path_current, range_lW, range_lH, params['n_epochs'], variant='relaxed')
-    get_optimal_2stages(path_current, range_lW, range_lH, params['n_epochs'], variant='strict')
+        # Define data/outputs paths
+        path_current = 'outputs/' + in_out + '/2stages/'
+        params['data_dir'] = data_dir + in_out + '/'
 
-    return
+        # Loop over hyperparameters
+        for lW in range_lW:
+            for lH in range_lH:
+                print('Task: ' + in_out)
+                print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
+                params['lW'], params['lH'] = lW, lH
+                params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
+                create_folder(params['out_dir'])
+                # First train the WMF
+                train_wmf(params, in_out=in_out)
+                # Then train the relaxed and strict variant on top of these WMFs
+                for variant in variant_list:
+                    print('Variant: ' + variant)
+                    # Useless to train for 'in' and 'relaxed' (it's juste WMF)
+                    if not(variant == 'relaxed' and in_out == 'in'):
+                        train_2stages(params, variant=variant, in_out=in_out)
 
-
-def train_noval_2stages_out(path_current, params, lW=0.1, lH=1.):
-
-    # Loop over hyperparameters
-    params['lW'], params['lH'] = lW, lH
-    params['out_dir'] = path_current + 'noval/'
-    create_folder(params['out_dir'])
-    # First train the WMF
-    train_wmf(params)
-    # Then train the relaxed and strict variant on top of these WMFs
-    train_2stages_relaxed(params)
-    train_2stages_strict(params)
+        # Get the optimal models after grid search
+        for variant in variant_list:
+            if not (variant == 'relaxed' and in_out == 'in'):
+                get_optimal_2stages(path_current, range_lW, range_lH, params['n_epochs'], variant=variant)
 
     return
 
@@ -80,6 +77,52 @@ def get_optimal_2stages(path_current, range_lW, range_lH, n_epochs, variant='rel
     return
 
 
+def test_main_2stages(in_out_list, variant_list, params, data_dir='data/'):
+
+    for in_out in in_out_list:
+        # Define the dataset and output path depending on if it's in/out task
+        params['data_dir'] = data_dir + in_out + '/'
+        # Loop over variants
+        for variant in variant_list:
+            if not (variant == 'relaxed' and in_out == 'in'):
+                path_current = 'outputs/' + in_out + '/2stages/' + variant + '/'
+                my_model = torch.load(path_current + 'model.pt').to(params['device'])
+                W, H = np.load(path_current + 'wmf.npz')['W'], np.load(path_current + 'wmf.npz')['H']
+                print('Task: ' + in_out + ' -  Variant: ' + variant)
+                print('NDCG: ' + str(evaluate_mf_hybrid(params, W, H, my_model, in_out=in_out, variant=variant, split='test')))
+                print('Time: ' + str(np.load(path_current + 'training.npz')['time']))
+
+    return
+
+
+def test_main_wmf(params):
+
+    params['data_dir'] = 'data/in/'
+    # Validation for selecting the best hyperparameters
+    val_ndcg_opt, lW_opt, lH_opt = 0, 0, 0
+    for lW in range_lW:
+        for lH in range_lH:
+            print('Validation...')
+            print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
+            path_wmf = 'outputs/in/2stages/lW_' + str(lW) + '/lH_' + str(lH) + '/wmf.npz'
+            W, H = np.load(path_wmf)['W'], np.load(path_wmf)['H']
+            val_ndcg = evaluate_mf_hybrid(params, W, H, None, in_out='in', variant='relaxed', split='val')
+            if val_ndcg > val_ndcg_opt:
+                val_ndcg_opt = val_ndcg
+                lW_opt, lH_opt = lW, lH
+
+    # Test with the best hyperparameters
+    path_wmf_opt = 'outputs/in/2stages/lW_' + str(lW_opt) + '/lH_' + str(lH_opt) + '/wmf.npz'
+    wmf_load = np.load(path_wmf_opt)
+    W, H, time_wmf = wmf_load['W'], wmf_load['H'], wmf_load['time_wmf']
+    test_ndcg = evaluate_mf_hybrid(params, W, H, None, in_out='in', variant='relaxed', split='val')
+    print('WMF (lambda_W=' + str(lW_opt) + ' lambda_H=' + str(lH_opt) + ')')
+    print('NDCG: ' + str(test_ndcg))
+    print('Time: ' + str(time_wmf))
+
+    return
+
+
 if __name__ == '__main__':
 
     # Set random seed for reproducibility
@@ -98,24 +141,20 @@ if __name__ == '__main__':
               'lr': 1e-4,
               'n_features_hidden': 1024,
               'n_features_in': 168,
-              'data_dir': 'data/out/',
               'device': device}
+    data_dir = 'data/'
 
-    path_current = 'outputs/out/2stages/'
-    train_b = True
-    val_b = True
+    # Training (and display the validation plots)
+    range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+    train_main_2stages(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
+    # plot_val_ndcg_lW_lH('outputs/out/2stages/relaxed/')
+    # plot_val_ndcg_lW_lH('outputs/out/2stages/strict/')
+    # plot_val_ndcg_lW_lH('outputs/in/2stages/strict/')
 
-    if train_b:
-        if val_b:
-            # Training and validation for the hyperparameters
-            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-            train_val_2stages_out(path_current, params, range_lW, range_lH)
-        else:
-            # Single training with pre-defined hyperparameter
-            train_noval_2stages_out(path_current, params, lW=0.1, lH=1.)
+    # Test dans display results
+    test_main_2stages(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
 
-    # Plot the validation results
-    plot_val_ndcg_lW_lH(path_current + 'relaxed/')
-    plot_val_ndcg_lW_lH(path_current + 'strict/')
+    # Test WMF (for in-matrix, equivalent to 2stages-relaxed)
+    test_main_wmf(params)
 
 # EOF

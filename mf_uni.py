@@ -10,7 +10,7 @@ from helpers.eval import evaluate_uni
 from helpers.models import ModelMFuni
 
 
-def train_main_mf_uni(in_out_list, variant_list, params, range_lW, range_lH):
+def train_main_mf_uni(in_out_list, variant_list, params, range_lW, range_lH, data_dir='data/'):
 
     # Check if this is a validation scenario: if more than 1 value is given for lW / lH
     val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
@@ -43,6 +43,7 @@ def train_main_mf_uni(in_out_list, variant_list, params, range_lW, range_lH):
                         train_mf_uni(params, variant='strict', in_out=in_out)
                     get_optimal_val_model_strict(path_current, range_lW, params['n_epochs'])
             else:
+                print('Task: ' + in_out + ' -  Variant: ' + variant)
                 params['lW'], params['lH'] = range_lW[0], range_lH[0]
                 params['out_dir'] = path_current + variant + '/'
                 create_folder(params['out_dir'])
@@ -52,9 +53,7 @@ def train_main_mf_uni(in_out_list, variant_list, params, range_lW, range_lH):
     return
 
 
-def test_main_mf_uni(in_out_list, variant_list, params):
-
-    data_dir = params['data_dir']
+def test_main_mf_uni(in_out_list, variant_list, params, data_dir='data/'):
 
     for in_out in in_out_list:
         # Define the dataset and output path depending on if it's in/out task
@@ -98,13 +97,13 @@ if __name__ == '__main__':
               'n_epochs': 100,
               'lr': 1e-4,
               'out_sigm': False,
-              'data_dir': 'data/',
               'device': device
               }
+    data_dir = 'data/'
 
     # Training
     range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
-    #train_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH)
+    train_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
 
     # Plot the validation loss as a function of the hyperparameters
     # plot_val_ndcg_lW_lH('outputs/out/mf_uni/relaxed/')
@@ -113,6 +112,6 @@ if __name__ == '__main__':
     # plot_val_ndcg_lW('outputs/in/mf_uni/strict/')
 
     # Testing
-    #test_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params)
+    #test_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
 
 # EOF
