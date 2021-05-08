@@ -14,7 +14,6 @@ def train_main_mf_uni(in_out_list, variant_list, params, range_lW, range_lH, dat
 
     # Check if this is a validation scenario: if more than 1 value is given for lW / lH
     val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
-    data_dir = params['data_dir']
 
     for in_out in in_out_list:
         # Define the dataset and output path depending on if it's in/out task
