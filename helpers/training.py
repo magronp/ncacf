@@ -495,7 +495,7 @@ def train_ncf_in(params):
 
     # Path for the TP training data, features and the WMF
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
-    path_features = os.path.join(params['data_dir'], 'train_feats.num.csv')
+    path_features = os.path.join(params['data_dir'], 'feats.num.csv')
 
     # Get the playcount data, confidence, and precompute its transpose
     train_data, _, _, conf = load_tp_data(path_tp_train, shape=(n_users, n_songs_train))
@@ -525,11 +525,10 @@ def train_ncf_in(params):
         for data in tqdm(my_dataloader, desc='Training', unit=' Batches(s)'):
             my_optimizer.zero_grad()
             # Load the user and item indices
-            x = data[0].to(params['device'])
             count_i = data[1].to(params['device'])
             it = data[2].to(params['device'])
             # Forward pass
-            pred_rat, w_gmf, h_gmf, w_mlp, h_mlp = my_model(u_total, x, it)
+            pred_rat, w_gmf, h_gmf, w_mlp, h_mlp = my_model(u_total, it)
             # Back-propagation
             loss = wpe_joint_ncf(count_i, pred_rat, w_gmf, h_gmf, w_mlp, h_mlp, lW, lH)
             loss.backward()
@@ -542,7 +541,7 @@ def train_ncf_in(params):
         loss_tot.append(loss_ep)
         time_ep = time.time() - start_time_ep
         time_tot += time_ep
-        val_ndcg = evaluate_uni_in(params, my_model, split='val')
+        val_ndcg = evaluate_uni(params, my_model, in_out='in', split='val')
         val_ndcg_tot.append(val_ndcg)
         print('\nLoss: {l:6.6f} | Time: {t:5.3f} | NDCG: {n:5.3f}'.format(l=loss_ep, t=time_ep, n=val_ndcg),
               flush=True)

@@ -64,7 +64,7 @@ def train_mh_hybrid_epiter(in_out_list, variant_list, params, data_dir='data/'):
             lamb_load = np.load(path_current + variant + '/hyperparams.npz')
             params['lW'], params['lH'] = lamb_load['lW'], lamb_load['lH']
             # Try other ep_it
-            for n_ep_it in [2, 5]:
+            for n_ep_it in [2, 5, 10]:
                 print('Task: ' + in_out + ' -  Variant: ' + variant)
                 print('N_GD=' + str(n_ep_it))
                 # Define the output directory
@@ -78,9 +78,10 @@ def train_mh_hybrid_epiter(in_out_list, variant_list, params, data_dir='data/'):
 
 def plot_val_mf_hybrid_epiter(in_out, variant, n_epochs):
 
+    n_ep_it_list = [1, 2, 5, 10]
     # Load the validation NDCGs
-    val_ndcg_epit = np.zeros((3, n_epochs))
-    for inep, n_ep_it in enumerate([1, 2, 5]):
+    val_ndcg_epit = np.zeros((len(n_ep_it_list), n_epochs))
+    for inep, n_ep_it in enumerate(n_ep_it_list):
         if n_ep_it == 1:
             path_ep = 'outputs/' + in_out + '/mf_hybrid/' + variant + '/'
         else:
@@ -98,14 +99,14 @@ def plot_val_mf_hybrid_epiter(in_out, variant, n_epochs):
 
 
 def test_main_mf_hybrid(in_out_list, variant_list, params, data_dir='data/'):
-
+    n_ep_it_list = [1, 2, 5, 10]
     for in_out in in_out_list:
         # Define the dataset and output path depending on if it's in/out task
         path_current = 'outputs/' + in_out + '/mf_hybrid/'
         params['data_dir'] = data_dir + in_out + '/'
         # Loop over variants
         for variant in variant_list:
-            for n_ep_it in [1, 2, 5]:
+            for n_ep_it in n_ep_it_list:
                 if n_ep_it == 1:
                     path_ep = path_current + variant + '/'
                 else:
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     # Set parameters
     params = {'batch_size': 128,
               'n_embeddings': 128,
-              'n_epochs': 100,
+              'n_epochs': 150,
               'lr': 1e-4,
               'n_features_hidden': 1024,
               'n_features_in': 168,

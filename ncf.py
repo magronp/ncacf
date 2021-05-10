@@ -36,7 +36,7 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 8,
+    params = {'batch_size': 128,
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
@@ -46,7 +46,6 @@ if __name__ == '__main__':
               }
 
     data_dir = 'data/'
-    path_current = 'outputs/in/ncf/'
     # Training and validation for the hyperparameters
     range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
     train_main_ncf(params, range_lW, range_lH, data_dir)

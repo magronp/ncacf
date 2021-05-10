@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import torch
-from torch.nn import Module, ModuleList, Linear, Sequential, ReLU, Embedding, Sigmoid, Identity, Dropout
+from torch.nn import Module, ModuleList, Linear, Sequential, ReLU, Embedding, Sigmoid, Identity
 
 
 class ModelAttributes(Module):
@@ -182,8 +182,8 @@ class ModelNCF(Module):
 
         super(ModelNCF, self).__init__()
 
-        # Define the model variant (strict or relaxed) and interaction (multiplication or concatenation)
         self.n_users = n_users
+
 
         # User and item embedding
         self.user_emb_gmf = Embedding(n_users, n_embeddings)
@@ -197,7 +197,6 @@ class ModelNCF(Module):
         self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
         self.item_emb_mlp.weight.data.data.normal_(0, 0.01)
 
-
         # Deep interaction layers
         self.n_features_di_in = n_embeddings * 2
 
@@ -208,7 +207,7 @@ class ModelNCF(Module):
         # Output layer
         self.out_layer = Sequential(Linear(3 * n_embeddings //2, 1, bias=False), Sigmoid())
 
-    def forward(self, u, x, i):
+    def forward(self, u, i):
 
         # Get the user/item factors
         w_gmf = self.user_emb_gmf(u)
@@ -218,6 +217,7 @@ class ModelNCF(Module):
 
         # Get the GMF output
         emb_gmf = w_gmf.unsqueeze(1) * h_gmf
+        emb_gmf = emb_gmf.view(-1, emb_gmf.shape[-1])
 
         # Get the MLP output
         # Concatenate and reshape
@@ -229,8 +229,7 @@ class ModelNCF(Module):
         emb_mlp = self.di2(emb_mlp)
 
         # Concatenate embeddings and feed to the output layer
-        emb_conc = torch.cat((emb_gmf.unsqueeze(1).expand(*[-1, emb_mlp.shape[0], -1]),
-                              emb_mlp.unsqueeze(0).expand(*[self.n_users, -1, -1])), dim=-1)
+        emb_conc = torch.cat((emb_gmf, emb_mlp), dim=-1)
         pred_rat = self.out_layer(emb_conc)
         # Reshape as (n_users, batch_size)
         pred_rat = pred_rat.view(self.n_users, -1)

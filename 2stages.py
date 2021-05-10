@@ -137,7 +137,7 @@ if __name__ == '__main__':
     params = {'batch_size': 128,
               'n_embeddings': 128,
               'n_iter_wmf': 30,
-              'n_epochs': 100,
+              'n_epochs': 150,
               'lr': 1e-4,
               'n_features_hidden': 1024,
               'n_features_in': 168,
