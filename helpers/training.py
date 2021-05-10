@@ -530,7 +530,7 @@ def train_ncf_in(params):
             # Forward pass
             pred_rat, w_gmf, h_gmf, w_mlp, h_mlp = my_model(u_total, it)
             # Back-propagation
-            loss = wpe_joint_ncf(count_i, pred_rat, w_gmf, h_gmf, w_mlp, h_mlp, lW, lH)
+            loss = wpe_joint_ncf(count_i, torch.transpose(pred_rat, 1, 0), w_gmf, h_gmf, w_mlp, h_mlp, lW, lH)
             loss.backward()
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
             my_optimizer.step()
