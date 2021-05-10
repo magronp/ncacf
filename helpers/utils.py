@@ -174,6 +174,14 @@ def wpe_joint_ncf(count_i, pred_rat, w_gmf, h_gmf, w_mlp, h_mlp, lW, lH=0, alpha
     return loss
 
 
+def wpe_joint_ncacfnew(count_i, pred_rat, w_gmf, h_gmf, w_mlp, h_mlp, h_con, lW, lH=0, alpha=2.0, epsilon=1e-6):
+
+    loss = ((1 + alpha * torch.log(1 + count_i / epsilon)) * (pred_rat - count_i) ** 2).mean()\
+           + lW * (w_gmf ** 2 + w_mlp ** 2).mean() + lH * ((h_con - h_mlp) ** 2 + (h_con - h_gmf) ** 2).mean()
+
+    return loss
+
+
 # Generate of list of user indexes for each batch
 def user_idx_generator(n_users, batch_users):
     for start in range(0, n_users, batch_users):

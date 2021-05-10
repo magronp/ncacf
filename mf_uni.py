@@ -101,7 +101,7 @@ if __name__ == '__main__':
     data_dir = 'data/'
 
     # Training
-    range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
+    range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
     train_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
 
     # Plot the validation loss as a function of the hyperparameters

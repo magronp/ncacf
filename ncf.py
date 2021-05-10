@@ -40,14 +40,15 @@ if __name__ == '__main__':
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
-              'n_epochs': 150,
+              'n_epochs': 100,
               'lr': 1e-4,
               'device': device
               }
 
     data_dir = 'data/'
     # Training and validation for the hyperparameters
-    range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
+    #range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
+    range_lW, range_lH = [1], [1]
     train_main_ncf(params, range_lW, range_lH, data_dir)
 
 # EOF
