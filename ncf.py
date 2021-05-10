@@ -8,7 +8,10 @@ from helpers.utils import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 from helpers.training import train_ncf_in
 
 
-def train_val_ncf_in(path_current, params, range_lW, range_lH):
+def train_main_ncf(params, range_lW, range_lH, data_dir = 'data/'):
+
+    path_current = 'outputs/in/ncf/'
+    params['data_dir'] = data_dir + '/in/'
     # Training with grid search on the hyperparameters
     for lW in range_lW:
         for lH in range_lH:
@@ -37,16 +40,15 @@ if __name__ == '__main__':
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
-              'n_epochs': 100,
+              'n_epochs': 150,
               'lr': 1e-4,
-              'out_sigm': False,
-              'data_dir': 'data/out/',
               'device': device
               }
 
+    data_dir = 'data/'
     path_current = 'outputs/in/ncf/'
     # Training and validation for the hyperparameters
     range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10]
-    train_val_ncf_in(path_current, params, range_lW, range_lH)
+    train_main_ncf(params, range_lW, range_lH, data_dir)
 
 # EOF
