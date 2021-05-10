@@ -12,7 +12,7 @@ from tqdm import tqdm
 from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings
 from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict, wpe_joint, wpe_joint_ncf, wpe_joint_ncacfnew
 from helpers.models import ModelAttributes, ModelMFuni, ModelNCACF, ModelNCF, ModelNCACFnew
-from helpers.eval import evaluate_mf_hybrid, predict_attributes, evaluate_uni, evaluate_uni_in
+from helpers.eval import evaluate_mf_hybrid, predict_attributes, evaluate_uni
 
 __author__ = 'Paul Magron -- IRIT, Université de Toulouse, CNRS, France'
 __docformat__ = 'reStructuredText'
