@@ -207,7 +207,7 @@ class ModelNCF(Module):
         # Output layer
         self.out_layer = Sequential(Linear(3 * n_embeddings //2, 1, bias=False), Sigmoid())
 
-    def forward(self, u, i):
+    def forward(self, u, x, i):
 
         # Get the user/item factors
         w_gmf = self.user_emb_gmf(u)

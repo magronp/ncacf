@@ -528,7 +528,7 @@ def train_ncf_in(params):
             count_i = data[1].to(params['device'])
             it = data[2].to(params['device'])
             # Forward pass
-            pred_rat, w_gmf, h_gmf, w_mlp, h_mlp = my_model(u_total, it)
+            pred_rat, w_gmf, h_gmf, w_mlp, h_mlp = my_model(u_total, None, it)
             # Back-propagation
             loss = wpe_joint_ncf(count_i, torch.transpose(pred_rat, 1, 0), w_gmf, h_gmf, w_mlp, h_mlp, lW, lH)
             loss.backward()
