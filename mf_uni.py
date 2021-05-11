@@ -68,7 +68,7 @@ def test_main_mf_uni(in_out_list, variant_list, params, data_dir='data/'):
         # Loop over variants
         for variant in variant_list:
             my_model = ModelMFuni(n_users, n_songs_train, params['n_embeddings'], params['n_features_in'],
-                                  params['n_features_hidden'], variant, params['out_sigm'])
+                                  params['n_features_hidden'], variant)
             my_model.load_state_dict(torch.load(path_current + variant + '/model.pt'))
             my_model.to(params['device'])
             print('Task: ' + in_out + ' -  Variant: ' + variant)
@@ -95,7 +95,6 @@ if __name__ == '__main__':
               'n_features_in': 168,
               'n_epochs': 100,
               'lr': 1e-4,
-              'out_sigm': False,
               'device': device
               }
     data_dir = 'data/'

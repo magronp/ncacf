@@ -27,17 +27,12 @@ class ModelAttributes(Module):
 
 class ModelMFuni(Module):
 
-    def __init__(self, n_users, n_songs, n_embeddings, n_features_in, n_features_hidden, mod, out_sigm=False):
+    def __init__(self, n_users, n_songs, n_embeddings, n_features_in, n_features_hidden, mod):
 
         super(ModelMFuni, self).__init__()
 
         # Define if the model variant is strict, relaxed, or sum
         self.mod = mod
-
-        if out_sigm:
-            self.func_act_out = Sigmoid()
-        else:
-            self.func_act_out = Identity()
 
         # Item content extractor
         self.fnn_in = Sequential(Linear(n_features_in, n_features_hidden, bias=True), ReLU())
@@ -72,7 +67,58 @@ class ModelMFuni(Module):
                 h = self.item_emb(i)
 
         # Interaction model
-        pred_rat = self.func_act_out(torch.matmul(h, torch.transpose(w, 0, 1)))
+        pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
+
+        return pred_rat, w, h, h_con
+
+
+class ModelGMF(Module):
+
+    def __init__(self, n_users, n_songs, n_embeddings, n_features_in, n_features_hidden, mod):
+
+        super(ModelGMF, self).__init__()
+
+        # Define if the model variant is strict, relaxed, or sum
+        self.mod = mod
+
+        # Item content extractor
+        self.fnn_in = Sequential(Linear(n_features_in, n_features_hidden, bias=True), ReLU())
+        self.fnn_hi1 = Sequential(Linear(n_features_hidden, n_features_hidden, bias=True), ReLU())
+        self.fnn_out = Linear(n_features_hidden, n_embeddings, bias=True)
+
+        # Output layer
+        self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
+        self.out_act = Sigmoid()
+
+        # embedding layers and initialization (uniform)
+        self.user_emb = Embedding(n_users, n_embeddings)
+        self.user_emb.weight.data.normal_(0, 0.01)
+        if self.mod == 'relaxed':
+            self.item_emb = Embedding(n_songs, n_embeddings)
+            self.item_emb.weight.data.normal_(0, 0.01)
+
+    def forward(self, u, x, i):
+
+        # Apply the content feature extractor
+        h_con = self.fnn_in(x)
+        h_con = self.fnn_hi1(h_con)
+        h_con = self.fnn_out(h_con)
+
+        # Get the factors
+        w = self.user_emb(u)
+
+        # If strict model or for evaluation: no item embedding
+        if all(i == -1):
+            h = h_con
+        else:
+            # Distinct between strict, relaxed or 'sum' model
+            if self.mod == 'strict':
+                h = h_con
+            else:
+                h = self.item_emb(i)
+
+        # Interaction model
+        pred_rat = self.out_act(self.out_layer_gmf(w.unsqueeze(1) * h))
 
         return pred_rat, w, h, h_con
 
@@ -281,7 +327,6 @@ class ModelNCF(Module):
         super(ModelNCF, self).__init__()
 
         self.n_users = n_users
-
 
         # User and item embedding
         self.user_emb_gmf = Embedding(n_users, n_embeddings)
