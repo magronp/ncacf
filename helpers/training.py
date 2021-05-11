@@ -537,7 +537,7 @@ def train_gmf(params, variant='relaxed', in_out='out'):
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
             # Back-propagation
-            loss = wpe_joint(count_i, pred_rat, w, h, h_con, lW, lH)
+            loss = wpe_joint(count_i, torch.transpose(pred_rat, 1, 0), w, h, h_con, lW, lH)
             loss.backward()
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
             my_optimizer.step()

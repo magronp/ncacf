@@ -91,6 +91,7 @@ class ModelGMF(Module):
         self.out_act = Sigmoid()
 
         # embedding layers and initialization (uniform)
+        self.n_users = n_users
         self.user_emb = Embedding(n_users, n_embeddings)
         self.user_emb.weight.data.normal_(0, 0.01)
         if self.mod == 'relaxed':
@@ -117,8 +118,9 @@ class ModelGMF(Module):
             else:
                 h = self.item_emb(i)
 
-        # Interaction model
+        # Interaction model (and reshape)
         pred_rat = self.out_act(self.out_layer_gmf(w.unsqueeze(1) * h))
+        pred_rat = pred_rat.view(self.n_users, -1)
 
         return pred_rat, w, h, h_con
 
