@@ -37,12 +37,12 @@ class ModelMLP(Module):
         self.fnn_out = Sequential(Linear(n_features_hidden, n_embeddings, bias=True))
 
         # User (and item for the relaxed variant) embedding, corresponding to the factorization part
-        self.user_emb_mlp = Embedding(n_users, n_embeddings)
-        self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
+        self.user_emb = Embedding(n_users, n_embeddings)
+        self.user_emb.weight.data.data.normal_(0, 0.01)
         # Item embedding (for the relaxed models)
         if self.variant == 'relaxed':
-            self.user_emb_mlp = Embedding(n_songs, n_embeddings)
-            self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
+            self.item_emb = Embedding(n_songs, n_embeddings)
+            self.item_emb.weight.data.data.normal_(0, 0.01)
 
         # Deep interaction layers
         self.n_features_di_in = n_embeddings * 2 ** (self.inter == 'conc')
