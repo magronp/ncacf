@@ -18,12 +18,12 @@ import torch
 from torch.nn import Module, ModuleList, Linear, Sequential, ReLU, Embedding, Sigmoid, Identity
 
 
-class ModelNCACF2(Module):
+class ModelMLP(Module):
 
     def __init__(self, n_users, n_songs, n_features_in, n_features_hidden, n_embeddings, n_layers_di, variant='relaxed',
                  inter='mult'):
 
-        super(ModelNCACF2, self).__init__()
+        super(ModelMLP, self).__init__()
 
         # Define the model variant (strict or relaxed) and interaction (multiplication or concatenation)
         self.n_users = n_users
@@ -31,116 +31,18 @@ class ModelNCACF2(Module):
         self.inter = inter
         self.n_layers_di = n_layers_di
 
-        self.func_out = Sigmoid()
-
         # Item content extractor
         self.fnn_in = Sequential(Linear(n_features_in, n_features_hidden, bias=True), ReLU())
         self.fnn_hi1 = Sequential(Linear(n_features_hidden, n_features_hidden, bias=True), ReLU())
         self.fnn_out = Sequential(Linear(n_features_hidden, n_embeddings, bias=True))
 
         # User (and item for the relaxed variant) embedding, corresponding to the factorization part
-        self.user_emb = Embedding(n_users, n_embeddings)
-        self.user_emb.weight.data.data.normal_(0, 0.01)
-        # Item embedding (for the relaxed models)
-        if self.variant == 'relaxed':
-            self.item_emb = Embedding(n_songs, n_embeddings)
-            self.item_emb.weight.data.data.normal_(0, 0.01)
-
-        # Embeddings for the DI model
         self.user_emb_mlp = Embedding(n_users, n_embeddings)
         self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
-        if self.variant == 'relaxed':
-            self.item_emb_mlp = Embedding(n_songs, n_embeddings)
-            self.item_emb_mlp.weight.data.data.normal_(0, 0.01)
-
-        # Deep interaction layers
-        self.n_features_di_in = n_embeddings * 2 ** (self.inter == 'conc')
-        if n_layers_di == 0:
-            self.di = ModuleList([Identity()])
-        else:
-            self.di = ModuleList([Sequential(
-                Linear(self.n_features_di_in // (2 ** q), self.n_features_di_in // (2 ** (q + 1)), bias=True),
-                ReLU()) for q in range(self.n_layers_di)])
-
-        # Output layer
-        self.out_layer = Sequential(Linear(n_embeddings + self.n_features_di_in // (2 ** self.n_layers_di), 1, bias=False), Sigmoid())
-
-    def forward(self, u, x, i):
-
-        # Get the user factors
-        w_gmf = self.user_emb(u)
-        w_mlp = self.user_emb_mlp(u)
-
-        # Apply the content feature extractor
-        h_con = self.fnn_in(x)
-        h_con = self.fnn_hi1(h_con)
-        h_con = self.fnn_out(h_con)
-
-        # If strict model or for evaluation: no item embedding
-        if all(i == -1):
-            h_gmf = h_con
-            h_mlp = h_con
-        else:
-            # Distinct between strict and relaxed
-            if self.variant == 'strict':
-                h_gmf = h_con
-                h_mlp = h_con
-            else:
-                h_gmf = self.item_emb(i)
-                h_mlp = self.item_emb_mlp(i)
-
-        # Get the GMF-like output
-        emb_gmf = w_gmf.unsqueeze(1) * h_gmf
-        emb_gmf = emb_gmf.view(-1, emb_gmf.shape[-1])
-
-        # Interaction model: first do the combination of the embeddings
-        if self.inter == 'mult':
-            emb_mlp = w_mlp.unsqueeze(1) * h_mlp
-        else:
-            emb_mlp = torch.cat((w_mlp.unsqueeze(1).expand(*[-1, h_mlp.shape[0], -1]),
-                                 h_mlp.unsqueeze(0).expand(*[self.n_users, -1, -1])), dim=-1)
-        # Reshape/flatten as (n_users * batch_size, n_embeddings)
-        emb_mlp = emb_mlp.view(-1, self.n_features_di_in)
-
-        # Deep interaction model:
-        for nl in range(self.n_layers_di):
-            emb_mlp = self.di[nl](emb_mlp)
-
-        # Concatenate embeddings and feed to the output layer
-        emb_conc = torch.cat((emb_gmf, emb_mlp), dim=-1)
-        pred_rat = self.out_layer(emb_conc)
-
-        # Reshape as (n_users, batch_size)
-        pred_rat = pred_rat.view(self.n_users, -1)
-
-        return pred_rat, w_gmf, w_mlp, h_gmf, h_mlp, h_con
-
-
-class ModelNCACFnew(Module):
-
-    def __init__(self, n_users, n_songs, n_features_in, n_features_hidden, n_embeddings, n_layers_di, variant='relaxed',
-                 inter='mult'):
-
-        super(ModelNCACFnew, self).__init__()
-
-        # Define the model variant (strict or relaxed) and interaction (multiplication or concatenation)
-        self.n_users = n_users
-        self.variant = variant
-        self.inter = inter
-        self.n_layers_di = n_layers_di
-
-        # Item content extractor
-        self.fnn_in = Sequential(Linear(n_features_in, n_features_hidden, bias=True), ReLU())
-        self.fnn_hi1 = Sequential(Linear(n_features_hidden, n_features_hidden, bias=True), ReLU())
-        self.fnn_out = Sequential(Linear(n_features_hidden, n_embeddings, bias=True))
-
-        # User (and item for the relaxed variant) embedding, corresponding to the factorization part
-        self.user_emb = Embedding(n_users, n_embeddings)
-        self.user_emb.weight.data.data.normal_(0, 0.01)
         # Item embedding (for the relaxed models)
         if self.variant == 'relaxed':
-            self.item_emb = Embedding(n_songs, n_embeddings)
-            self.item_emb.weight.data.data.normal_(0, 0.01)
+            self.user_emb_mlp = Embedding(n_songs, n_embeddings)
+            self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
 
         # Deep interaction layers
         self.n_features_di_in = n_embeddings * 2 ** (self.inter == 'conc')
@@ -152,7 +54,6 @@ class ModelNCACFnew(Module):
                 ReLU()) for q in range(self.n_layers_di)])
 
         # Output layers
-        self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
         self.out_layer_mlp = Linear(self.n_features_di_in // (2 ** self.n_layers_di), 1, bias=False)
         self.out_act = Sigmoid()
 
@@ -176,10 +77,6 @@ class ModelNCACFnew(Module):
             else:
                 h = self.item_emb(i)
 
-        # Get the GMF-like output
-        emb_gmf = w.unsqueeze(1) * h
-        emb_gmf = emb_gmf.view(-1, emb_gmf.shape[-1])
-
         # Interaction model: first do the combination of the embeddings
         if self.inter == 'mult':
             emb_mlp = w.unsqueeze(1) * h
@@ -194,14 +91,14 @@ class ModelNCACFnew(Module):
             emb_mlp = self.di[nl](emb_mlp)
 
         # Concatenate embeddings and feed to the output layer
-        pred_rat = self.out_act(self.out_layer_gmf(emb_gmf) + self.out_layer_mlp(emb_mlp))
+        pred_rat = self.out_act(self.out_layer_mlp(emb_mlp))
         # Reshape as (n_users, batch_size)
         pred_rat = pred_rat.view(self.n_users, -1)
 
         return pred_rat, w, h, h_con
 
 
-def train_ncacf_new(params, path_pretrain=None, in_out='out', variant='relaxed', inter='mult'):
+def train_mlp(params, path_pretrain=None, in_out='out', variant='relaxed', inter='mult'):
 
     # Get the number of songs and users
     n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
@@ -220,7 +117,7 @@ def train_ncacf_new(params, path_pretrain=None, in_out='out', variant='relaxed',
     train_data, _, _, conf = load_tp_data(path_tp_train, shape=(n_users, n_songs_train))
 
     # Define and initialize the model
-    my_model = ModelNCACFnew(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
+    my_model = ModelMLP(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
                           params['n_embeddings'], params['n_layers_di'], variant, inter)
     if path_pretrain is None:
         lW, lH = params['lW'], params['lH']
@@ -286,7 +183,7 @@ def train_ncacf_new(params, path_pretrain=None, in_out='out', variant='relaxed',
     return
 
 
-def train_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data_dir='data/'):
+def train_main_mlp(in_out_list, variant_list, inter_list, nl_list, params, data_dir='data/'):
 
     for in_out in in_out_list:
         params['data_dir'] = data_dir + in_out + '/'
@@ -296,13 +193,13 @@ def train_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, dat
             for inter in inter_list:
                 for nl in nl_list:
                     params['n_layers_di'] = nl
-                    params['out_dir'] = 'outputs/' + in_out + '/ncacf/' + variant + '/' + inter + '/layers_di_' + str(nl) + '/'
+                    params['out_dir'] = 'outputs/' + in_out + '/mlp/' + variant + '/' + inter + '/layers_di_' + str(nl) + '/'
                     create_folder(params['out_dir'])
-                    train_ncacf_new(params, path_pretrain=path_pretrain, in_out=in_out, variant=variant, inter=inter)
+                    train_mlp(params, path_pretrain=path_pretrain, in_out=in_out, variant=variant, inter=inter)
     return
 
 
-def test_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data_dir='data/'):
+def test_main_mlp(in_out_list, variant_list, inter_list, nl_list, params, data_dir='data/'):
 
     for in_out in in_out_list:
         # Define the dataset and output path depending on if it's in/out task
@@ -319,10 +216,10 @@ def test_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data
             for inter in inter_list:
                 for nl in nl_list:
                     params['n_layers_di'] = nl
-                    my_model = ModelNCACFnew(n_users, n_songs_train, params['n_features_in'],
+                    my_model = ModelMLP(n_users, n_songs_train, params['n_features_in'],
                                              params['n_features_hidden'],
                                              params['n_embeddings'], params['n_layers_di'], variant, inter)
-                    path_current = 'outputs/' + in_out + '/ncacf/' + variant + '/' + inter + '/layers_di_' + str(
+                    path_current = 'outputs/' + in_out + '/mlp/' + variant + '/' + inter + '/layers_di_' + str(
                         nl) + '/'
                     my_model.load_state_dict(torch.load(path_current + '/model.pt'))
                     my_model.to(params['device'])
@@ -356,10 +253,10 @@ if __name__ == '__main__':
 
     # Training
     #in_out_list, variant_list, inter_list, nl_list = ['out', 'in'], ['relaxed', 'strict'], ['mult', 'conc'], [0, 1, 2, 3]
-    in_out_list, variant_list, inter_list, nl_list = ['out'], ['relaxed'], ['mult'], [2, 3, 4]
-    train_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data_dir)
+    in_out_list, variant_list, inter_list, nl_list = ['out'], ['relaxed'], ['mult'], [1]
+    train_main_mlp(in_out_list, variant_list, inter_list, nl_list, params, data_dir)
 
     # Testing
-    test_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data_dir)
+    test_main_mlp(in_out_list, variant_list, inter_list, nl_list, params, data_dir)
 
 # EOF
