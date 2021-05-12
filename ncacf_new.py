@@ -296,17 +296,16 @@ def train_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, dat
             for inter in inter_list:
                 for nl in nl_list:
                     params['n_layers_di'] = nl
-                    params['out_dir'] = 'outputs/' + in_out + '/ncacf/' + variant + '/' + inter +  '/layers_di_' + str(nl) + '/'
+                    params['out_dir'] = 'outputs/' + in_out + '/ncacf/' + variant + '/' + inter + '/layers_di_' + str(nl) + '/'
                     create_folder(params['out_dir'])
                     train_ncacf_new(params, path_pretrain=path_pretrain, in_out=in_out, variant=variant, inter=inter)
     return
 
 
-def test_main_mf_uni(in_out_list, variant_list, params, data_dir='data/'):
+def test_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data_dir='data/'):
 
     for in_out in in_out_list:
         # Define the dataset and output path depending on if it's in/out task
-        path_current = 'outputs/' + in_out + '/mf_uni/'
         params['data_dir'] = data_dir + in_out + '/'
         # Number of users and songs for the test
         n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
@@ -317,13 +316,19 @@ def test_main_mf_uni(in_out_list, variant_list, params, data_dir='data/'):
             n_songs_train = n_songs_total
         # Loop over variants
         for variant in variant_list:
-            my_model = ModelMFuni(n_users, n_songs_train, params['n_embeddings'], params['n_features_in'],
-                                  params['n_features_hidden'], variant, params['out_sigm'])
-            my_model.load_state_dict(torch.load(path_current + variant + '/model.pt'))
-            my_model.to(params['device'])
-            print('Task: ' + in_out + ' -  Variant: ' + variant)
-            print('NDCG: ' + str(evaluate_uni(params, my_model, in_out=in_out, split='test')))
-            print('Time: ' + str(np.load(path_current + variant + '/training.npz')['time']))
+            for inter in inter_list:
+                for nl in nl_list:
+                    params['n_layers_di'] = nl
+                    my_model = ModelNCACFnew(n_users, n_songs_train, params['n_features_in'],
+                                             params['n_features_hidden'],
+                                             params['n_embeddings'], params['n_layers_di'], variant, inter)
+                    path_current = 'outputs/' + in_out + '/ncacf/' + variant + '/' + inter + '/layers_di_' + str(
+                        nl) + '/'
+                    my_model.load_state_dict(torch.load(path_current + '/model.pt'))
+                    my_model.to(params['device'])
+                    print('Task: ' + in_out + ' -  Variant: ' + variant)
+                    print('NDCG: ' + str(evaluate_uni(params, my_model, in_out=in_out, split='test')))
+                    print('Time: ' + str(np.load(path_current + variant + '/training.npz')['time']))
 
     return
 
@@ -350,7 +355,11 @@ if __name__ == '__main__':
     data_dir = 'data/'
 
     # Training
-    #train_main_ncacf(['out', 'in'], ['relaxed', 'strict'], ['mult', 'conc'], [0, 1, 2, 3], params, data_dir)
-    train_main_ncacf(['out'], ['relaxed'], ['conc'], [1], params, data_dir)
+    #in_out_list, variant_list, inter_list, nl_list = ['out', 'in'], ['relaxed', 'strict'], ['mult', 'conc'], [0, 1, 2, 3]
+    in_out_list, variant_list, inter_list, nl_list = ['out'], ['relaxed'], ['mult'], [1]
+    #train_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data_dir)
+
+    # Testing
+    test_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data_dir)
 
 # EOF

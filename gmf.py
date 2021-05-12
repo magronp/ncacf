@@ -105,10 +105,10 @@ if __name__ == '__main__':
     train_main_gmf(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
 
     # Plot the validation loss as a function of the hyperparameters
-    # plot_val_ndcg_lW_lH('outputs/out/mf_uni/relaxed/')
-    # plot_val_ndcg_lW('outputs/out/mf_uni/strict/')
-    # plot_val_ndcg_lW_lH('outputs/in/mf_uni/relaxed/')
-    # plot_val_ndcg_lW('outputs/in/mf_uni/strict/')
+    # plot_val_ndcg_lW_lH('outputs/out/gmf/relaxed/')
+    # plot_val_ndcg_lW('outputs/out/gmf/strict/')
+    # plot_val_ndcg_lW_lH('outputs/in/gmf/relaxed/')
+    # plot_val_ndcg_lW('outputs/in/gmf/strict/')
 
     # Testing
     test_main_gmf(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
