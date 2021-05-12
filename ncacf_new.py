@@ -328,7 +328,7 @@ def test_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data
                     my_model.to(params['device'])
                     print('Task: ' + in_out + ' -  Variant: ' + variant)
                     print('NDCG: ' + str(evaluate_uni(params, my_model, in_out=in_out, split='test')))
-                    print('Time: ' + str(np.load(path_current + variant + '/training.npz')['time']))
+                    print('Time: ' + str(np.load(path_current + '/training.npz')['time']))
 
     return
 
@@ -356,7 +356,7 @@ if __name__ == '__main__':
 
     # Training
     #in_out_list, variant_list, inter_list, nl_list = ['out', 'in'], ['relaxed', 'strict'], ['mult', 'conc'], [0, 1, 2, 3]
-    in_out_list, variant_list, inter_list, nl_list = ['out'], ['relaxed'], ['mult'], [1]
+    in_out_list, variant_list, inter_list, nl_list = ['out'], ['relaxed'], ['mult'], [2,3,4]
     #train_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data_dir)
 
     # Testing
