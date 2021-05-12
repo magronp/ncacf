@@ -278,7 +278,7 @@ def train_ncacf_new(params, path_pretrain=None, in_out='out', variant='relaxed',
         if val_ndcg > ndcg_opt:
             ndcg_opt = val_ndcg
             time_opt = time_tot
-            torch.save(my_model, os.path.join(params['out_dir'], 'model.pt'))
+            torch.save(my_model.state_dict(), os.path.join(params['out_dir'], 'model.pt'))
 
     # Record the training log
     np.savez(os.path.join(params['out_dir'], 'training.npz'), loss=loss_tot, time=time_opt, val_ndcg=val_ndcg_tot)
@@ -348,7 +348,7 @@ if __name__ == '__main__':
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
-              'n_epochs': 100,
+              'n_epochs': 30,
               'lr': 1e-4,
               'device': device
               }
