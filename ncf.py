@@ -47,8 +47,7 @@ if __name__ == '__main__':
 
     data_dir = 'data/'
     # Training and validation for the hyperparameters
-    #range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
-    range_lW, range_lH = [1], [1]
+    range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
     train_main_ncf(params, range_lW, range_lH, data_dir)
 
 # EOF
