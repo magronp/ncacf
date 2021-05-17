@@ -36,7 +36,7 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 128,
+    params = {'batch_size': 8,
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,

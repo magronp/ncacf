@@ -11,7 +11,7 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings
 from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict, wpe_joint, wpe_joint_ncf, wpe_joint_ncacfnew
-from helpers.models import ModelAttributes, ModelMFuni, ModelGMF, ModelNCACF, ModelNCF, ModelNCACFnew
+from helpers.models import ModelAttributes, ModelMFuni, ModelGMF, ModelNCACF, ModelMLP
 from helpers.eval import evaluate_mf_hybrid, predict_attributes, evaluate_uni
 
 __author__ = 'Paul Magron -- IRIT, Université de Toulouse, CNRS, France'
@@ -582,7 +582,7 @@ def train_ncf_in(params):
     train_data, _, _, conf = load_tp_data(path_tp_train, shape=(n_users, n_songs_train))
 
     # Define and initialize the model, and get the hyperparameters
-    my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'])
+    my_model = ModelMLP(n_users, n_songs_train, params['n_embeddings'])
     my_model.requires_grad_(True)
     my_model.to(params['device'])
 
@@ -609,9 +609,9 @@ def train_ncf_in(params):
             count_i = data[1].to(params['device'])
             it = data[2].to(params['device'])
             # Forward pass
-            pred_rat, w_gmf, h_gmf, w_mlp, h_mlp = my_model(u_total, None, it)
+            pred_rat, w_mlp, h_mlp = my_model(u_total, None, it)
             # Back-propagation
-            loss = wpe_joint_ncf(count_i, torch.transpose(pred_rat, 1, 0), w_gmf, h_gmf, w_mlp, h_mlp, lW, lH)
+            loss = wpe_joint_ncf(count_i, torch.transpose(pred_rat, 1, 0), w_mlp, h_mlp, lW, lH)
             loss.backward()
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
             my_optimizer.step()

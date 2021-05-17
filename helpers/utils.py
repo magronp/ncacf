@@ -166,10 +166,10 @@ def wpe_joint(count_i, pred_rat, w, h, h_con, lW, lH=0, alpha=2.0, epsilon=1e-6)
 
 
 # Weighted Prediction Error for the in-matrix recom
-def wpe_joint_ncf(count_i, pred_rat, w_gmf, h_gmf, w_mlp, h_mlp, lW, lH=0, alpha=2.0, epsilon=1e-6):
+def wpe_joint_ncf(count_i, pred_rat, w_mlp, h_mlp, lW, lH=0, alpha=2.0, epsilon=1e-6):
 
     loss = ((1 + alpha * torch.log(1 + count_i / epsilon)) * (pred_rat - count_i) ** 2).mean()\
-           + lW * (w_gmf ** 2 + w_mlp ** 2).mean() + lH * (h_mlp ** 2 + h_gmf ** 2).mean()
+           + lW * (w_mlp ** 2).mean() + lH * (h_mlp ** 2).mean()
 
     return loss
 
