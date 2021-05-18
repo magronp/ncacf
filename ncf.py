@@ -17,6 +17,59 @@ from helpers.eval import evaluate_mf_hybrid, predict_attributes, evaluate_uni
 from torch.nn import Module, ModuleList, Linear, Sequential, ReLU, Embedding, Sigmoid, Identity
 
 
+class ModelNCF(Module):
+
+    def __init__(self, n_users, n_songs, n_embeddings):
+
+        super(ModelNCF, self).__init__()
+
+        self.n_users = n_users
+
+        # Same for the MLP part
+        self.user_emb_mlp = Embedding(n_users, n_embeddings)
+        self.item_emb_mlp = Embedding(n_songs, n_embeddings)
+        self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
+        self.item_emb_mlp.weight.data.data.normal_(0, 0.01)
+
+        # Deep interaction layers
+        self.n_features_di_in = n_embeddings * 2
+
+        # First create the intermediate layers
+        self.di1 = Sequential(Linear(n_embeddings * 2, n_embeddings, bias=True), ReLU())
+        self.di2 = Sequential(Linear(n_embeddings, n_embeddings // 2, bias=True), ReLU())
+
+        # Output layers
+        self.out_layer_mlp = Linear(n_embeddings // 2, 1, bias=False)
+        self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
+        self.out_act = Sigmoid()
+
+    def forward(self, u, x, i):
+
+        # Get the user/item factors
+        w_mlp = self.user_emb_mlp(u)
+        h_mlp = self.item_emb_mlp(i)
+
+        # Get the GMF output
+        emb_gmf = w_mlp.unsqueeze(1) * h_mlp
+        emb_gmf = emb_gmf.view(-1, emb_gmf.shape[-1])
+
+        # Get the MLP output
+        # Concatenate and reshape
+        emb_mlp = torch.cat((w_mlp.unsqueeze(1).expand(*[-1, h_mlp.shape[0], -1]),
+                             h_mlp.unsqueeze(0).expand(*[w_mlp.shape[0], -1, -1])), dim=-1)
+        emb_mlp = emb_mlp.view(-1, self.n_features_di_in)
+        # Deep interaction
+        emb_mlp = self.di1(emb_mlp)
+        emb_mlp = self.di2(emb_mlp)
+
+        # feed to the output layers
+        pred_rat = self.out_act(self.out_layer_gmf(emb_gmf) + self.out_layer_mlp(emb_mlp))
+        # Reshape as (n_users, batch_size)
+        pred_rat = pred_rat.view(self.n_users, -1)
+
+        return pred_rat, w_mlp, h_mlp
+
+
 class ModelMLP(Module):
 
     def __init__(self, n_users, n_songs, n_embeddings):
@@ -58,6 +111,7 @@ class ModelMLP(Module):
         emb_mlp = self.di1(emb_mlp)
         emb_mlp = self.di2(emb_mlp)
         pred_rat = self.out_layer(emb_mlp)
+
         # Reshape as (n_users, batch_size)
         pred_rat = pred_rat.view(w_mlp.shape[0], -1)
 
@@ -256,11 +310,11 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 128,
+    params = {'batch_size': 8,
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
-              'n_epochs': 100,
+              'n_epochs': 50,
               'lr': 1e-4,
               'device': device
               }
