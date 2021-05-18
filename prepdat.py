@@ -280,6 +280,43 @@ def numerize_features_in(data_dir='data/'):
     return
 
 
+def gen_neg_tp(data_dir='data/', in_out='out', neg_ratio=5):
+
+    path_data = data_dir + in_out + '/'
+
+    n_users = len(open(path_data + 'unique_uid.txt').readlines())
+    n_songs_train = len(open(path_data + 'unique_sid.txt').readlines())
+    if in_out == 'out':
+        n_songs_train = int(0.7 * n_songs_train)
+    list_items_total = np.arange(n_songs_train)
+
+    # TP data
+    train_tp_data = pd.read_csv(path_data + 'train_tp.num.csv')
+    val_tp_data = pd.read_csv(path_data + 'val_tp.num.csv')
+    test_tp_data = pd.read_csv(path_data + 'test_tp.num.csv')
+    list_users_train = pd.unique(train_tp_data['uid'])
+
+    # Neg sampling item lists
+    n_songs_neg = neg_ratio - 1
+    item_neg_sampling = np.zeros((n_users, n_songs_neg))
+
+    # Negative sampling of items for each user
+    for u in list_users_train:
+        list_items_u_train = np.unique(train_tp_data[train_tp_data['uid'] == u]['sid'])
+        list_items_samples_u = np.delete(list_items_total, list_items_u_train)
+        if in_out == 'in':
+            list_items_u_val = np.unique(val_tp_data[val_tp_data['uid'] == u]['sid'])
+            list_items_u_test = np.unique(test_tp_data[test_tp_data['uid'] == u]['sid'])
+            list_items_samples_u = np.delete(list_items_samples_u, list_items_u_val)
+            list_items_samples_u = np.delete(list_items_samples_u, list_items_u_test)
+        item_neg_sampling[u, :] = np.random.choice(list_items_samples_u, n_songs_neg, replace=False)
+
+    # Store the result
+    np.savez(path_data + 'train_tp_neg.num.npz', neg_items=item_neg_sampling)
+
+    return
+
+
 if __name__ == '__main__':
 
     # Set random seed for reproducibility
@@ -287,6 +324,7 @@ if __name__ == '__main__':
 
     MIN_USER_COUNT, MIN_SONG_COUNT, MIN_COUNT = 20, 50, 7
     data_dir = 'data/'
+    neg_ratio = 5
 
     # Load the TP data and filter out inactive data
     load_filter_record_tp(data_dir, min_uc=MIN_USER_COUNT, min_sc=MIN_SONG_COUNT, min_c=MIN_COUNT)
@@ -314,5 +352,8 @@ if __name__ == '__main__':
     shutil.copyfile(data_dir + 'unique_sid.txt', data_dir + 'in/unique_sid.txt')
     shutil.copyfile(data_dir + 'unique_uid.txt', data_dir + 'out/unique_uid.txt')
     shutil.copyfile(data_dir + 'unique_uid.txt', data_dir + 'in/unique_uid.txt')
+
+    # Negative sampling
+    gen_neg_tp(data_dir=data_dir, in_out='out', neg_ratio=neg_ratio)
 
 # EOF

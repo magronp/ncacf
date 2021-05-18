@@ -48,7 +48,8 @@ def load_tp_data_sparse(csv_file, n_users, n_songs):
 
     tp = pd.read_csv(csv_file)
     indices = torch.tensor([tp['uid'], tp['sid']], dtype=torch.long)
-    values = torch.ones_like(torch.tensor(tp['count'], dtype=torch.float32))
+    #values = torch.ones_like(torch.tensor(tp['count'], dtype=torch.float32))
+    values = torch.tensor(tp['count'], dtype=torch.float32)
 
     # Construct a sparse tensor
     tp_sparse_tens = torch.sparse.FloatTensor(indices, values, torch.Size([n_users, n_songs]))

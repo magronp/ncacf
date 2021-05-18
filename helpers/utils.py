@@ -165,6 +165,15 @@ def wpe_joint(count_i, pred_rat, w, h, h_con, lW, lH=0, alpha=2.0, epsilon=1e-6)
     return loss
 
 
+# Weighted Prediction Error with negative sampling
+def wpe_joint_neg(count_pos, pred_rat_pos, pred_rat_neg, w_mlp, h_mlp, lW, lH=0, alpha=2.0, epsilon=1e-6):
+
+    loss = ((1 + alpha * torch.log(1 + count_pos / epsilon)) * (pred_rat_pos - count_pos) ** 2).mean()\
+           + (pred_rat_neg ** 2).mean() + lW * (w_mlp ** 2).mean() + lH * (h_mlp ** 2).mean()
+
+    return loss
+
+
 # Weighted Prediction Error for the in-matrix recom
 def wpe_joint_ncf(count_i, pred_rat, w_mlp, h_mlp, lW, lH=0, alpha=2.0, epsilon=1e-6):
 
