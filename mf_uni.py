@@ -110,6 +110,6 @@ if __name__ == '__main__':
     # plot_val_ndcg_lW('outputs/in/mf_uni/strict/')
 
     # Testing
-    test_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
+    #test_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
 
 # EOF

@@ -72,6 +72,29 @@ class ModelMFuni(Module):
         return pred_rat, w, h, h_con
 
 
+class ModelMFuninocontent(Module):
+
+    def __init__(self, n_users, n_songs, n_embeddings):
+
+        super(ModelMFuninocontent, self).__init__()
+
+        # embedding layers and initialization (uniform)
+        self.user_emb = Embedding(n_users, n_embeddings)
+        self.user_emb.weight.data.normal_(0, 0.01)
+        self.item_emb = Embedding(n_songs, n_embeddings)
+        self.item_emb.weight.data.normal_(0, 0.01)
+
+    def forward(self, u, x, i):
+
+        # Get the factors
+        w = self.user_emb(u)
+        h = self.item_emb(i)
+        # Interaction model
+        pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
+
+        return pred_rat, w, h
+
+
 class ModelGMF(Module):
 
     def __init__(self, n_users, n_songs, n_embeddings, n_features_in, n_features_hidden, mod):
