@@ -77,7 +77,8 @@ class ModelNCF(Module):
         # Output layers
         self.out_layer_mlp = Linear(n_embeddings // 2, 1, bias=False)
         self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
-        self.out_act = Sigmoid()
+        self.out_layer_gmf.weight.data.fill_(1)
+        self.out_layer_mlp.weight.data.fill_(1)
 
     def forward(self, u, x, i):
 
@@ -99,7 +100,7 @@ class ModelNCF(Module):
         emb_mlp = self.di2(emb_mlp)
 
         # feed to the output layers
-        pred_rat = self.out_act(self.out_layer_gmf(emb_gmf) + self.out_layer_mlp(emb_mlp))
+        pred_rat = 0.5*self.out_layer_gmf(emb_gmf) + 0.5*self.out_layer_mlp(emb_mlp)
         # Reshape as (n_users, batch_size)
         pred_rat = pred_rat.view(self.n_users, -1)
 
@@ -407,8 +408,8 @@ def train_main_ncf(params, range_lW, range_lH, data_dir = 'data/'):
             params['lW'], params['lH'] = lW, lH
             params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
             create_folder(params['out_dir'])
-            #train_ncf(params)
-            train_mf_uni_nocontent(params)
+            train_ncf(params)
+            #train_mf_uni_nocontent(params)
     if val_b:
         get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
 
