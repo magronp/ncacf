@@ -127,7 +127,9 @@ class ModelMLP(Module):
         self.di2 = Sequential(Linear(n_embeddings, n_embeddings // 2, bias=True), ReLU())
 
         # Output layer
-        self.out_layer = Sequential(Linear(n_embeddings // 2, 1, bias=False), Sigmoid())
+        #self.out_layer = Sequential(Linear(n_embeddings // 2, 1, bias=False), Sigmoid())
+        self.out_layer = Linear(n_embeddings // 2, 1, bias=False)
+        self.out_layer.weight.data.fill_(1)
 
     def forward(self, u, x, i):
         # Get the user/item factors
