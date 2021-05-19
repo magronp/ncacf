@@ -29,6 +29,7 @@ class ModelMFuninocontent(Module):
         self.item_emb = Embedding(n_songs, n_embeddings)
         self.item_emb.weight.data.normal_(0, 0.01)
         self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
+        self.out_layer_gmf.weight.data.fill_(1)
 
     def forward(self, u, x, i):
 
