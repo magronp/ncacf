@@ -28,8 +28,7 @@ class ModelMFuninocontent(Module):
         self.user_emb.weight.data.normal_(0, 0.01)
         self.item_emb = Embedding(n_songs, n_embeddings)
         self.item_emb.weight.data.normal_(0, 0.01)
-
-        self.out_act = Sigmoid()
+        self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
 
     def forward(self, u, x, i):
 
@@ -43,9 +42,10 @@ class ModelMFuninocontent(Module):
         emb = w.unsqueeze(1) * h
         emb = emb.view(-1, emb.shape[-1])
         # feed to the output layers
-        pred_rat = emb.sum(dim=-1)
+        #pred_rat = emb.sum(dim=-1)
+        pred_rat = self.out_layer_gmf(emb)
         # Reshape as (n_users, batch_size)
-        pred_rat = self.out_act(pred_rat.view(self.n_users, -1)).transpose(0, 1)
+        pred_rat = pred_rat.view(self.n_users, -1).transpose(0, 1)
         '''
         pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
         '''
@@ -76,7 +76,6 @@ class ModelNCF(Module):
         # Output layers
         self.out_layer_mlp = Linear(n_embeddings // 2, 1, bias=False)
         self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
-        self.di[-1][0].weight.data.fill_(1)
         self.out_act = Sigmoid()
 
     def forward(self, u, x, i):
