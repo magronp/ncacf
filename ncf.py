@@ -29,25 +29,26 @@ class ModelMFuninocontent(Module):
         self.item_emb = Embedding(n_songs, n_embeddings)
         self.item_emb.weight.data.normal_(0, 0.01)
 
+        self.out_act = Sigmoid()
+
     def forward(self, u, x, i):
 
         # Get the factors
         w = self.user_emb(u)
         h = self.item_emb(i)
 
+        # Interaction model
+
         # Get the GMF output
-        '''
         emb = w.unsqueeze(1) * h
         emb = emb.view(-1, emb.shape[-1])
         # feed to the output layers
         pred_rat = emb.sum(dim=-1)
         # Reshape as (n_users, batch_size)
-        pred_rat = pred_rat.view(self.n_users, -1)
+        pred_rat = self.out_act(pred_rat.view(self.n_users, -1)).transpose(0, 1)
         '''
-
-        # Interaction model
         pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
-
+        '''
         return pred_rat, w, h
 
 
@@ -423,7 +424,7 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 8,
+    params = {'batch_size': 128,
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
