@@ -15,7 +15,37 @@ from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttribut
 from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict, wpe_joint, wpe_joint_ncf, wpe_joint_ncacfnew, wpe_joint_neg
 from helpers.eval import evaluate_mf_hybrid, predict_attributes, evaluate_uni
 from torch.nn import Module, ModuleList, Linear, Sequential, ReLU, Embedding, Sigmoid, Identity
-from helpers.models import ModelMFuninocontent
+
+
+class ModelMFuninocontent(Module):
+
+    def __init__(self, n_users, n_songs, n_embeddings):
+
+        super(ModelMFuninocontent, self).__init__()
+        self.n_users = n_users
+        # embedding layers and initialization (uniform)
+        self.user_emb = Embedding(n_users, n_embeddings)
+        self.user_emb.weight.data.normal_(0, 0.01)
+        self.item_emb = Embedding(n_songs, n_embeddings)
+        self.item_emb.weight.data.normal_(0, 0.01)
+
+    def forward(self, u, x, i):
+
+        # Get the factors
+        w = self.user_emb(u)
+        h = self.item_emb(i)
+
+        # Get the GMF output
+        emb = w.unsqueeze(1) * h
+        emb = emb.view(-1, emb.shape[-1])
+
+        # feed to the output layers
+        pred_rat = emb.sum(dim=-1)
+
+        # Reshape as (n_users, batch_size)
+        pred_rat = pred_rat.view(self.n_users, -1)
+
+        return pred_rat, w, h
 
 
 class ModelNCF(Module):
@@ -330,7 +360,7 @@ def train_mf_uni_nocontent(params):
             # Forward pass
             pred_rat, w, h = my_model(u_total, None, it)
             # Back-propagation
-            loss = wpe_joint_ncf(count_i, pred_rat, w, h, lW, lH)
+            loss = wpe_joint_ncf(count_i, torch.transpose(pred_rat, 1, 0), w, h, lW, lH)
             loss.backward()
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
             my_optimizer.step()
@@ -390,7 +420,7 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 128,
+    params = {'batch_size': 8,
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
