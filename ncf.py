@@ -36,14 +36,17 @@ class ModelMFuninocontent(Module):
         h = self.item_emb(i)
 
         # Get the GMF output
+        '''
         emb = w.unsqueeze(1) * h
         emb = emb.view(-1, emb.shape[-1])
-
         # feed to the output layers
         pred_rat = emb.sum(dim=-1)
-
         # Reshape as (n_users, batch_size)
         pred_rat = pred_rat.view(self.n_users, -1)
+        '''
+
+        # Interaction model
+        pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
 
         return pred_rat, w, h
 
@@ -360,7 +363,7 @@ def train_mf_uni_nocontent(params):
             # Forward pass
             pred_rat, w, h = my_model(u_total, None, it)
             # Back-propagation
-            loss = wpe_joint_ncf(count_i, torch.transpose(pred_rat, 1, 0), w, h, lW, lH)
+            loss = wpe_joint_ncf(count_i, pred_rat, w, h, lW, lH)
             loss.backward()
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
             my_optimizer.step()
