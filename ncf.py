@@ -23,10 +23,44 @@ class ModelMFuninocontent(Module):
 
         super(ModelMFuninocontent, self).__init__()
         self.n_users = n_users
-        # embedding layers and initialization (uniform)
+        # embedding layers and initialization
+        self.item_emb = Embedding(n_songs, n_embeddings)
         self.user_emb = Embedding(n_users, n_embeddings)
         self.user_emb.weight.data.normal_(0, 0.01)
+        self.item_emb.weight.data.normal_(0, 0.01)
+
+    def forward(self, u, x, i):
+
+        # Get the factors
+        w = self.user_emb(u)
+        h = self.item_emb(i)
+
+        # Interaction model
+
+        # Get the GMF output
+        '''
+        pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
+        '''
+        emb = w.unsqueeze(1) * h
+        emb = emb.view(-1, emb.shape[-1])
+        # feed to the output layers
+        pred_rat = emb.sum(dim=-1)
+        # Reshape as (n_users, batch_size)
+        pred_rat = pred_rat.view(self.n_users, -1).transpose(0, 1)
+
+        return pred_rat, w, h
+
+
+class ModelGMF(Module):
+
+    def __init__(self, n_users, n_songs, n_embeddings):
+
+        super(ModelGMF, self).__init__()
+        self.n_users = n_users
+        # embedding layers and initialization
         self.item_emb = Embedding(n_songs, n_embeddings)
+        self.user_emb = Embedding(n_users, n_embeddings)
+        self.user_emb.weight.data.normal_(0, 0.01)
         self.item_emb.weight.data.normal_(0, 0.01)
         self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
         self.out_layer_gmf.weight.data.fill_(1)
@@ -38,18 +72,13 @@ class ModelMFuninocontent(Module):
         h = self.item_emb(i)
 
         # Interaction model
-
-        # Get the GMF output
         emb = w.unsqueeze(1) * h
         emb = emb.view(-1, emb.shape[-1])
         # feed to the output layers
-        #pred_rat = emb.sum(dim=-1)
         pred_rat = self.out_layer_gmf(emb)
         # Reshape as (n_users, batch_size)
         pred_rat = pred_rat.view(self.n_users, -1).transpose(0, 1)
-        '''
-        pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
-        '''
+
         return pred_rat, w, h
 
 
@@ -62,10 +91,10 @@ class ModelNCF(Module):
         self.n_users = n_users
 
         # Same for the MLP part
-        self.user_emb_mlp = Embedding(n_users, n_embeddings)
-        self.item_emb_mlp = Embedding(n_songs, n_embeddings)
-        self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
-        self.item_emb_mlp.weight.data.data.normal_(0, 0.01)
+        self.user_emb = Embedding(n_users, n_embeddings)
+        self.item_emb = Embedding(n_songs, n_embeddings)
+        self.user_emb.weight.data.data.normal_(0, 0.01)
+        self.item_emb.weight.data.data.normal_(0, 0.01)
 
         # Deep interaction layers
         self.n_features_di_in = n_embeddings * 2
@@ -77,34 +106,34 @@ class ModelNCF(Module):
         # Output layers
         self.out_layer_mlp = Linear(n_embeddings // 2, 1, bias=False)
         self.out_layer_gmf = Linear(n_embeddings, 1, bias=False)
-        self.out_layer_gmf.weight.data.fill_(1)
-        self.out_layer_mlp.weight.data.fill_(1)
+        self.out_layer_gmf.weight.data.fill_(0.5)
+        self.out_layer_mlp.weight.data.fill_(0.5)
 
     def forward(self, u, x, i):
 
         # Get the user/item factors
-        w_mlp = self.user_emb_mlp(u)
-        h_mlp = self.item_emb_mlp(i)
+        w = self.user_emb(u)
+        h = self.item_emb(i)
 
         # Get the GMF output
-        emb_gmf = w_mlp.unsqueeze(1) * h_mlp
+        emb_gmf = w.unsqueeze(1) * h
         emb_gmf = emb_gmf.view(-1, emb_gmf.shape[-1])
 
         # Get the MLP output
         # Concatenate and reshape
-        emb_mlp = torch.cat((w_mlp.unsqueeze(1).expand(*[-1, h_mlp.shape[0], -1]),
-                             h_mlp.unsqueeze(0).expand(*[w_mlp.shape[0], -1, -1])), dim=-1)
+        emb_mlp = torch.cat((w.unsqueeze(1).expand(*[-1, h.shape[0], -1]),
+                             h.unsqueeze(0).expand(*[w.shape[0], -1, -1])), dim=-1)
         emb_mlp = emb_mlp.view(-1, self.n_features_di_in)
         # Deep interaction
         emb_mlp = self.di1(emb_mlp)
         emb_mlp = self.di2(emb_mlp)
 
         # feed to the output layers
-        pred_rat = 0.5*self.out_layer_gmf(emb_gmf) + 0.5*self.out_layer_mlp(emb_mlp)
+        pred_rat = self.out_layer_gmf(emb_gmf) + self.out_layer_mlp(emb_mlp)
         # Reshape as (n_users, batch_size)
         pred_rat = pred_rat.view(self.n_users, -1)
 
-        return pred_rat, w_mlp, h_mlp
+        return pred_rat, w, h
 
 
 class ModelMLP(Module):
@@ -157,7 +186,7 @@ class ModelMLP(Module):
         return pred_rat, w_mlp, h_mlp
 
 
-def train_ncf(params):
+def train_ncf(params, path_pretrain=None):
 
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
@@ -175,6 +204,8 @@ def train_ncf(params):
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'])
+    if not(path_pretrain is None):
+        my_model.load_state_dict(torch.load(path_pretrain + 'model.pt'), strict=False)
     my_model.requires_grad_(True)
     my_model.to(params['device'])
 
@@ -208,7 +239,6 @@ def train_ncf(params):
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
             my_optimizer.step()
             epoch_losses.append(loss.item())
-
         # Overall stats for one epoch
         loss_ep = np.mean(epoch_losses)
         loss_tot.append(loss_ep)
@@ -395,24 +425,51 @@ def train_mf_uni_nocontent(params):
     return
 
 
-def train_main_ncf(params, range_lW, range_lH, data_dir = 'data/'):
+def train_main_ncf(params, range_lW, range_lH, data_dir='data/', path_pretrain=None):
 
     val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
 
     path_current = 'outputs/in/ncf/'
     params['data_dir'] = data_dir + 'in/'
     # Training with grid search on the hyperparameters
-    for lW in range_lW:
-        for lH in range_lH:
-            print(lW, lH)
-            params['lW'], params['lH'] = lW, lH
-            params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
-            create_folder(params['out_dir'])
-            train_ncf(params)
-            #train_mf_uni_nocontent(params)
     if val_b:
+        for lW in range_lW:
+            for lH in range_lH:
+                print(lW, lH)
+                params['lW'], params['lH'] = lW, lH
+                params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
+                create_folder(params['out_dir'])
+                train_ncf(params, path_pretrain)
         get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
+    else:
+        params['lW'], params['lH'] = range_lW[0], range_lH[0]
+        params['out_dir'] = path_current
+        create_folder(params['out_dir'])
+        train_ncf(params, path_pretrain)
+    return
 
+
+def train_main_mf_uni_nocontent(params, range_lW, range_lH, data_dir='data/'):
+
+    val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
+
+    path_current = 'outputs/in/gmf_nocontent/'
+    params['data_dir'] = data_dir + 'in/'
+    # Training with grid search on the hyperparameters
+    if val_b:
+        for lW in range_lW:
+            for lH in range_lH:
+                print(lW, lH)
+                params['lW'], params['lH'] = lW, lH
+                params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
+                create_folder(params['out_dir'])
+                train_mf_uni_nocontent(params)
+        get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
+    else:
+        params['lW'], params['lH'] = range_lW[0], range_lH[0]
+        params['out_dir'] = path_current
+        create_folder(params['out_dir'])
+        train_mf_uni_nocontent(params)
     return
 
 
@@ -427,10 +484,8 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 128,
+    params = {'batch_size': 8,
               'n_embeddings': 128,
-              'n_features_hidden': 1024,
-              'n_features_in': 168,
               'n_epochs': 50,
               'lr': 1e-4,
               'device': device
@@ -443,6 +498,7 @@ if __name__ == '__main__':
     #train_main_ncf(params, range_lW, range_lH, data_dir)
 
     range_lW, range_lH = [0.1], [0.1]
-    train_main_ncf(params, range_lW, range_lH, data_dir)
+    train_main_mf_uni_nocontent(params, range_lW, range_lH, data_dir)
+    train_main_ncf(params, range_lW, range_lH, data_dir, path_pretrain='outputs/in/gmf_nocontent/')
 
 # EOF
