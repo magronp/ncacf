@@ -261,7 +261,7 @@ def train_ncf(params, path_pretrain=None):
     return
 
 
-def train_ncf_negsamp(params, neg_ratio=5):
+def train_ncf_negsamp(params, neg_ratio=5, path_pretrain=None):
 
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
@@ -280,6 +280,8 @@ def train_ncf_negsamp(params, neg_ratio=5):
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'])
+    if not(path_pretrain is None):
+        my_model.load_state_dict(torch.load(path_pretrain + 'model.pt'), strict=False)
     my_model.requires_grad_(True)
     my_model.to(params['device'])
 
@@ -439,7 +441,8 @@ def train_main_ncf(params, range_lW, range_lH, data_dir='data/', path_pretrain=N
                 params['lW'], params['lH'] = lW, lH
                 params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
                 create_folder(params['out_dir'])
-                train_ncf(params, path_pretrain)
+                #train_ncf(params, path_pretrain)
+                train_ncf_negsamp(params, neg_ratio=5, path_pretrain=path_pretrain)
         get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
     else:
         params['lW'], params['lH'] = range_lW[0], range_lH[0]
@@ -486,7 +489,7 @@ if __name__ == '__main__':
     # Set parameters
     params = {'batch_size': 8,
               'n_embeddings': 128,
-              'n_epochs': 50,
+              'n_epochs': 100,
               'lr': 1e-4,
               'device': device
               }
@@ -498,7 +501,7 @@ if __name__ == '__main__':
     #train_main_ncf(params, range_lW, range_lH, data_dir)
 
     range_lW, range_lH = [0.1], [0.1]
-    train_main_mf_uni_nocontent(params, range_lW, range_lH, data_dir)
+    #train_main_mf_uni_nocontent(params, range_lW, range_lH, data_dir)
     train_main_ncf(params, range_lW, range_lH, data_dir, path_pretrain='outputs/in/gmf_nocontent/')
 
 # EOF
