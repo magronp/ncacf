@@ -144,46 +144,47 @@ class ModelMLP(Module):
         self.n_users = n_users
 
         # Same for the MLP part
-        self.user_emb_mlp = Embedding(n_users, n_embeddings)
-        self.item_emb_mlp = Embedding(n_songs, n_embeddings)
-        self.user_emb_mlp.weight.data.data.normal_(0, 0.01)
-        self.item_emb_mlp.weight.data.data.normal_(0, 0.01)
+        self.user_emb = Embedding(n_users, n_embeddings)
+        self.item_emb = Embedding(n_songs, n_embeddings)
+        self.user_emb.weight.data.data.normal_(0, 0.01)
+        self.item_emb.weight.data.data.normal_(0, 0.01)
 
         # Deep interaction layers
-        self.n_features_di_in = n_embeddings * 2
+        self.n_features_di_in = n_embeddings
 
         # First create the intermediate layers
-        self.di1 = Sequential(Linear(n_embeddings * 2, n_embeddings, bias=True), ReLU())
-        self.di2 = Sequential(Linear(n_embeddings, n_embeddings // 2, bias=True), ReLU())
+        self.di1 = Sequential(Linear(n_embeddings, n_embeddings // 2, bias=True), ReLU())
+        self.di2 = Sequential(Linear(n_embeddings // 2, n_embeddings // 4, bias=True), ReLU())
 
         # Output layer
         #self.out_layer = Sequential(Linear(n_embeddings // 2, 1, bias=False), Sigmoid())
-        self.out_layer = Linear(n_embeddings // 2, 1, bias=False)
+        self.out_layer = Linear(n_embeddings // 4, 1, bias=False)
         self.out_layer.weight.data.fill_(1)
 
     def forward(self, u, x, i):
         # Get the user/item factors
-        w_mlp = self.user_emb_mlp(u)
-        h_mlp = self.item_emb_mlp(i)
+        w = self.user_emb(u)
+        h = self.item_emb(i)
 
         # Get the MLP output
         # Concatenate and reshape
-        emb_mlp = torch.cat((w_mlp.unsqueeze(1).expand(*[-1, h_mlp.shape[0], -1]),
-                             h_mlp.unsqueeze(0).expand(*[w_mlp.shape[0], -1, -1])), dim=-1)
-        emb_mlp = emb_mlp.view(-1, self.n_features_di_in)
+        #emb_mlp = torch.cat((w_mlp.unsqueeze(1).expand(*[-1, h_mlp.shape[0], -1]),
+        #                     h_mlp.unsqueeze(0).expand(*[w_mlp.shape[0], -1, -1])), dim=-1)
+        #emb_mlp = emb_mlp.view(-1, self.n_features_di_in)
 
-        # Reshape/flatten as (n_users * batch_size, n_embeddings)
-        emb_mlp = emb_mlp.view(-1, self.n_features_di_in)
+        # Interaction model
+        emb = w.unsqueeze(1) * h
+        emb = emb.view(-1, emb.shape[-1])
 
         # Deep interaction
-        emb_mlp = self.di1(emb_mlp)
-        emb_mlp = self.di2(emb_mlp)
-        pred_rat = self.out_layer(emb_mlp)
+        emb = self.di1(emb)
+        emb = self.di2(emb)
+        pred_rat = self.out_layer(emb)
 
         # Reshape as (n_users, batch_size)
-        pred_rat = pred_rat.view(w_mlp.shape[0], -1)
+        pred_rat = pred_rat.view(w.shape[0], -1)
 
-        return pred_rat, w_mlp, h_mlp
+        return pred_rat, w, h
 
 
 def train_ncf(params, path_pretrain=None):
@@ -203,7 +204,8 @@ def train_ncf(params, path_pretrain=None):
     train_data, _, _, conf = load_tp_data(path_tp_train, shape=(n_users, n_songs_train))
 
     # Define and initialize the model, and get the hyperparameters
-    my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'])
+    #my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'])
+    my_model = ModelMLP(n_users, n_songs_train, params['n_embeddings'])
     if not(path_pretrain is None):
         my_model.load_state_dict(torch.load(path_pretrain + 'model.pt'), strict=False)
     my_model.requires_grad_(True)
@@ -232,9 +234,9 @@ def train_ncf(params, path_pretrain=None):
             counts_tot = torch.transpose(data[1], 1, 0).to(params['device'])
             it_batch = data[2].to(params['device'])
             # Forward pass
-            pred_rat, w_mlp, h_mlp = my_model(u_total, None, it_batch)
+            pred_rat, w, h = my_model(u_total, None, it_batch)
             # Back-propagation
-            loss = wpe_joint_ncf(counts_tot, pred_rat, w_mlp, h_mlp, lW, lH)
+            loss = wpe_joint_ncf(counts_tot, pred_rat, w, h, lW, lH)
             loss.backward()
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
             my_optimizer.step()
@@ -502,6 +504,7 @@ if __name__ == '__main__':
 
     range_lW, range_lH = [0.1], [0.1]
     #train_main_mf_uni_nocontent(params, range_lW, range_lH, data_dir)
-    train_main_ncf(params, range_lW, range_lH, data_dir, path_pretrain='outputs/in/gmf_nocontent/')
+    path_pretrain = 'outputs/in/gmf_nocontent/'
+    train_main_ncf(params, range_lW, range_lH, data_dir, path_pretrain=None)
 
 # EOF
