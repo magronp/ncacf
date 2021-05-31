@@ -182,6 +182,27 @@ def train_main_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_di
     return
 
 
+def test_main_ncf(range_inter, range_nl_di, params, data_dir='data/'):
+
+    params['data_dir'] = data_dir + 'in/'
+
+    for inter in range_inter:
+        for nl_di in range_nl_di:
+            path_current = 'outputs/in/ncf/' + inter + '/' + str(nl_di) + '/'
+            # Number of users and songs for the test
+            n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+            n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+            n_songs_train = n_songs_total
+            my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'], nl_di, inter)
+            my_model.load_state_dict(torch.load(path_current + '/model.pt'))
+            my_model.to(params['device'])
+            print('Inter: ' + inter + ' -  Layers DI: ' + str(nl_di))
+            print('NDCG: ' + str(evaluate_uni(params, my_model, in_out='in', split='test')))
+            print('Time: ' + str(np.load(path_current + '/training.npz')['time']))
+
+    return
+
+
 if __name__ == '__main__':
 
     # Set random seed for reproducibility
@@ -208,5 +229,6 @@ if __name__ == '__main__':
 
     range_lW, range_lH, range_inter, range_nl_di = [0.1], [0.1], ['mult'], [-1, 0, 1, 2]
     train_main_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')
+    test_main_ncf(range_inter, range_nl_di, params, data_dir='data/')
 
 # EOF
