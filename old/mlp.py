@@ -249,7 +249,7 @@ if __name__ == '__main__':
               'lr': 1e-4,
               'device': device
               }
-    data_dir = 'data/'
+    data_dir = '../data/'
 
     # Training
     #in_out_list, variant_list, inter_list, nl_list = ['out', 'in'], ['relaxed', 'strict'], ['mult', 'conc'], [0, 1, 2, 3]

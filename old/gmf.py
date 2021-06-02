@@ -97,7 +97,7 @@ if __name__ == '__main__':
               'lr': 1e-4,
               'device': device
               }
-    data_dir = 'data/'
+    data_dir = '../data/'
 
     # Training
     #range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]

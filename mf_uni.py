@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
     # Training
     range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
-    train_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
+    #train_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
 
     # Plot the validation loss as a function of the hyperparameters
     # plot_val_ndcg_lW_lH('outputs/out/mf_uni/relaxed/')
@@ -110,6 +110,6 @@ if __name__ == '__main__':
     # plot_val_ndcg_lW('outputs/in/mf_uni/strict/')
 
     # Testing
-    #test_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
+    test_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
 
 # EOF

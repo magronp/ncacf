@@ -23,7 +23,7 @@ class ModelNCF(Module):
         super(ModelNCF, self).__init__()
 
         self.n_users = n_users
-        # Same for the MLP part
+        # Embeddings
         self.user_emb = Embedding(n_users, n_embeddings)
         self.item_emb = Embedding(n_songs, n_embeddings)
         self.user_emb.weight.data.data.normal_(0, 0.01)
@@ -42,8 +42,9 @@ class ModelNCF(Module):
                 Linear(self.n_features_di_in // (2 ** q), self.n_features_di_in // (2 ** (q + 1)), bias=True),
                 ReLU()) for q in range(self.n_layers_di)])
             # Output layer
-            self.out_layer = Linear(n_embeddings // (2 ** self.n_layers_di), 1, bias=False)
+            self.out_layer = Linear(self.n_features_di_in // (2 ** self.n_layers_di), 1, bias=False)
             self.out_layer.weight.data.fill_(1)
+            self.out_act = Sigmoid()
 
     def forward(self, u, x, i):
         # Get the user/item factors
@@ -66,7 +67,7 @@ class ModelNCF(Module):
         else:
             for nl in range(self.n_layers_di):
                 emb = self.di[nl](emb)
-            pred_rat = self.out_layer(emb)
+            pred_rat = self.out_act(self.out_layer(emb))
             pred_rat = pred_rat.view(self.n_users, -1)
 
         return pred_rat, w, h
@@ -90,7 +91,6 @@ def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult'):
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'], n_layers_di, inter)
-    #my_model = ModelMLP(n_users, n_songs_train, params['n_embeddings'])
     if not(path_pretrain is None):
         my_model.load_state_dict(torch.load(path_pretrain + 'model.pt'), strict=False)
     my_model.requires_grad_(True)
@@ -152,17 +152,14 @@ def train_main_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_di
 
     val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
     params['data_dir'] = data_dir + 'in/'
-    n_ep_max = params['n_epochs']
 
     for inter in range_inter:
         for nl_di in range_nl_di:
             path_current = 'outputs/in/ncf/' + inter + '/' + str(nl_di) + '/'
             if nl_di == -1:
                 path_pretrain = None
-                params['n_epochs'] = n_ep_max
             else:
                 path_pretrain = 'outputs/in/ncf/' + inter + '/' + str(-1) + '/'
-                params['n_epochs'] = 30
 
             # Training with grid search on the hyperparameters
             if val_b:
@@ -214,7 +211,7 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 8,
+    params = {'batch_size': 128,
               'n_embeddings': 128,
               'n_epochs': 100,
               'lr': 1e-4,
@@ -224,10 +221,7 @@ if __name__ == '__main__':
     data_dir = 'data/'
     # Training and validation for the hyperparameters
     #range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
-    #range_lW, range_lH = [0.1], [0.1]
-    #train_main_ncf(params, range_lW, range_lH, data_dir)
-
-    range_lW, range_lH, range_inter, range_nl_di = [0.1], [0.1], ['mult'], [-1, 0, 1, 2]
+    range_lW, range_lH, range_inter, range_nl_di = [0.1], [0.1], ['mult', 'conc'], [-1, 0, 1, 2, 3, 4, 5]
     train_main_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')
     test_main_ncf(range_inter, range_nl_di, params, data_dir='data/')
 
