@@ -160,7 +160,7 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, in_out='out', variant
         loss_tot.append(loss_ep)
         time_ep = time.time() - start_time_ep
         time_tot += time_ep
-        val_ndcg = evaluate_uni(params, my_model, in_out='in', split='val')
+        val_ndcg = evaluate_uni(params, my_model, in_out=in_out, split='val')
         val_ndcg_tot.append(val_ndcg)
         print('\nLoss: {l:6.6f} | Time: {t:5.3f} | NDCG: {n:5.3f}'.format(l=loss_ep, t=time_ep, n=val_ndcg),
               flush=True)
@@ -228,7 +228,8 @@ def train_main_ncacf(in_out_list, variant_list, params, range_lW, range_lH, rang
 
 def test_main_ncacf(in_out_list, variant_list, range_inter, range_nl_di, params, data_dir='data/'):
 
-    for in_out in in_out_list:
+    test_results_ncacf = np.zeros((2, 2, 2, 7, 2))
+    for i_io, in_out in in_out_list:
         params['data_dir'] = data_dir + in_out + '/'
         # Number of users and songs for the test
         n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
@@ -238,17 +239,25 @@ def test_main_ncacf(in_out_list, variant_list, range_inter, range_nl_di, params,
         else:
             n_songs_train = n_songs_total
 
-        for inter in range_inter:
-            for nl_di in range_nl_di:
-                for variant in variant_list:
+        for ii, inter in range_inter:
+            for inl, nl_di in range_nl_di:
+                for iv, variant in variant_list:
+                    # Load model
                     path_current = 'outputs/' + in_out + '/ncacf/' + inter + '/' + str(nl_di) + '/' + variant + '/'
                     my_model = ModelNCACF(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
                                   params['n_embeddings'], nl_di, variant, inter)
                     my_model.load_state_dict(torch.load(path_current + '/model.pt'))
                     my_model.to(params['device'])
+                    # Evaluate the model on the test set
+                    ncacf_ndcg = evaluate_uni(params, my_model, in_out=in_out, split='test') * 100
+                    ncacf_time = np.load(path_current + '/training.npz')['time']
+                    # Display and store the results
                     print('Task: ' + in_out + ' -  Inter: ' + inter + ' - N_layers: ' + str(nl_di) + ' - Variant: ' + variant)
-                    print('NDCG: ' + str(evaluate_uni(params, my_model, in_out='in', split='test')))
-                    print('Time: ' + str(np.load(path_current + '/training.npz')['time']))
+                    print('NDCG: ' + str(ncacf_ndcg) + 'Time: ' + str(ncacf_time))
+                    test_results_ncacf[i_io, ii, iv, inl, 0] = ncacf_ndcg
+                    test_results_ncacf[i_io, ii, iv, inl, 1] = ncacf_time
+    # Record the results
+    np.savez('outputs/test_results_ncacf.npz', test_results_ncacf=test_results_ncacf)
 
     return
 
@@ -277,7 +286,7 @@ if __name__ == '__main__':
     # Training and validation for the hyperparameters
     in_out_list, variant_list, range_lW, range_lH,  = ['in', 'out'], ['relaxed', 'strict'], [0.1], [0.1],
     range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4, 5]
-    train_main_ncacf(in_out_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')
+    #train_main_ncacf(in_out_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')
     test_main_ncacf(in_out_list, variant_list, range_inter, range_nl_di, params, data_dir='data/')
 
 # EOF

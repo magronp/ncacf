@@ -330,6 +330,7 @@ def test_main_ncacf(in_out_list, variant_list, inter_list, nl_list, params, data
                     print('NDCG: ' + str(evaluate_uni(params, my_model, in_out=in_out, split='test')))
                     print('Time: ' + str(np.load(path_current + '/training.npz')['time']))
 
+
     return
 
 
