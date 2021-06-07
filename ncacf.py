@@ -229,7 +229,7 @@ def train_main_ncacf(in_out_list, variant_list, params, range_lW, range_lH, rang
 def test_main_ncacf(in_out_list, variant_list, range_inter, range_nl_di, params, data_dir='data/'):
 
     test_results_ncacf = np.zeros((2, 2, 2, 7, 2))
-    for i_io, in_out in in_out_list:
+    for i_io, in_out in enumerate(in_out_list):
         params['data_dir'] = data_dir + in_out + '/'
         # Number of users and songs for the test
         n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
@@ -239,9 +239,9 @@ def test_main_ncacf(in_out_list, variant_list, range_inter, range_nl_di, params,
         else:
             n_songs_train = n_songs_total
 
-        for ii, inter in range_inter:
-            for inl, nl_di in range_nl_di:
-                for iv, variant in variant_list:
+        for ii, inter in enumerate(range_inter):
+            for inl, nl_di in enumerate(range_nl_di):
+                for iv, variant in enumerate(variant_list):
                     # Load model
                     path_current = 'outputs/' + in_out + '/ncacf/' + inter + '/' + str(nl_di) + '/' + variant + '/'
                     my_model = ModelNCACF(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
