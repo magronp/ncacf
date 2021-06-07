@@ -181,22 +181,30 @@ def train_main_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_di
 
 def test_main_ncf(range_inter, range_nl_di, params, data_dir='data/'):
 
+    test_results_ncf = np.zeros((2, 7, 2))
     params['data_dir'] = data_dir + 'in/'
 
-    for inter in range_inter:
-        for nl_di in range_nl_di:
+    for ii, inter in enumerate(range_inter):
+        for inl, nl_di in enumerate(range_nl_di):
             path_current = 'outputs/in/ncf/' + inter + '/' + str(nl_di) + '/'
             # Number of users and songs for the test
             n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
             n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
             n_songs_train = n_songs_total
+            # Load model
             my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'], nl_di, inter)
             my_model.load_state_dict(torch.load(path_current + '/model.pt'))
             my_model.to(params['device'])
+            # Evaluate the model on the test set
+            ncf_ndcg = evaluate_uni(params, my_model, in_out='in', split='test') * 100
+            ncf_time = np.load(path_current + '/training.npz')['time']
+            # Display and store the results
             print('Inter: ' + inter + ' -  Layers DI: ' + str(nl_di))
-            print('NDCG: ' + str(evaluate_uni(params, my_model, in_out='in', split='test')))
-            print('Time: ' + str(np.load(path_current + '/training.npz')['time']))
-
+            print('NDCG: ' + str(ncf_ndcg) + 'Time: ' + str(ncf_time))
+            test_results_ncf[ii, inl, 0] = ncf_ndcg
+            test_results_ncf[ii, inl, 1] = ncf_time
+    # Record the results
+    np.savez('outputs/in/ncf/test_results_ncf.npz', test_results_ncf=test_results_ncf)
     return
 
 
@@ -222,7 +230,7 @@ if __name__ == '__main__':
     # Training and validation for the hyperparameters
     #range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
     range_lW, range_lH, range_inter, range_nl_di = [0.1], [0.1], ['mult', 'conc'], [-1, 0, 1, 2, 3, 4, 5]
-    train_main_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')
+    #train_main_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')
     test_main_ncf(range_inter, range_nl_di, params, data_dir='data/')
 
 # EOF
