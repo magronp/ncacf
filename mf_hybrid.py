@@ -12,7 +12,7 @@ from helpers.eval import evaluate_mf_hybrid
 
 def train_main_mf_hybrid(in_out_list, variant_list, params, range_lW, range_lH, data_dir='data/'):
 
-    # In this case, set N_gd at 1
+    # In this case, set N_als at 1
     params['n_ep_it'] = 1
     # Check if this is a validation scenario: if more than 1 value is given for lW / lH
     val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
@@ -54,7 +54,7 @@ def train_main_mf_hybrid(in_out_list, variant_list, params, range_lW, range_lH, 
     return
 
 
-def train_mh_hybrid_epiter(in_out_list, variant_list, params, data_dir='data/'):
+def train_mh_hybrid_epiter(in_out_list, variant_list, n_ep_it_list, params, data_dir='data/'):
 
     for in_out in in_out_list:
         path_current = 'outputs/' + in_out + '/mf_hybrid/'
@@ -64,7 +64,7 @@ def train_mh_hybrid_epiter(in_out_list, variant_list, params, data_dir='data/'):
             lamb_load = np.load(path_current + variant + '/hyperparams.npz')
             params['lW'], params['lH'] = lamb_load['lW'], lamb_load['lH']
             # Try other ep_it
-            for n_ep_it in [2, 5, 10]:
+            for n_ep_it in n_ep_it_list:
                 print('Task: ' + in_out + ' -  Variant: ' + variant)
                 print('N_GD=' + str(n_ep_it))
                 # Define the output directory
@@ -76,9 +76,8 @@ def train_mh_hybrid_epiter(in_out_list, variant_list, params, data_dir='data/'):
     return
 
 
-def plot_val_mf_hybrid_epiter(in_out, variant, n_epochs):
+def plot_val_mf_hybrid_epiter(in_out, variant, n_epochs, n_ep_it_list):
 
-    n_ep_it_list = [1, 2, 5, 10]
     # Load the validation NDCGs
     val_ndcg_epit = np.zeros((len(n_ep_it_list), n_epochs))
     for inep, n_ep_it in enumerate(n_ep_it_list):
@@ -86,20 +85,20 @@ def plot_val_mf_hybrid_epiter(in_out, variant, n_epochs):
             path_ep = 'outputs/' + in_out + '/mf_hybrid/' + variant + '/'
         else:
             path_ep = 'outputs/' + in_out + '/mf_hybrid/' + variant + '/gd_' + str(n_ep_it) + '/'
-        val_ndcg_epit[inep, :] = np.load(path_ep + 'training.npz')['val_ndcg'] * 100
+        val_ndcg_epit[inep, :] = np.load(path_ep + 'training.npz')['val_ndcg'][:n_epochs] * 100
 
     # Plot the validation NDCG
     plt.figure()
     plt.plot(np.arange(n_epochs) + 1, val_ndcg_epit.T)
     plt.xlabel('Epochs')
     plt.ylabel('NDCG (%)')
-    plt.legend(['N_GD=1', 'N_GD=2', 'N_GD=5'])
+    plt.legend(['$N_{als}=1$', '$N_{als}=2$', '$N_{als}=5$'])
 
     return
 
 
-def test_main_mf_hybrid(in_out_list, variant_list, params, data_dir='data/'):
-    n_ep_it_list = [1, 2, 5, 10]
+def test_main_mf_hybrid(in_out_list, variant_list, n_ep_it_list, params, data_dir='data/'):
+
     for in_out in in_out_list:
         # Define the dataset and output path depending on if it's in/out task
         path_current = 'outputs/' + in_out + '/mf_hybrid/'
@@ -142,21 +141,26 @@ if __name__ == '__main__':
 
     # Training (and display the validation plots)
     range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-    train_main_mf_hybrid(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
+    in_out_list, variant_list = ['in', 'out'], ['relaxed', 'strict']
+    train_main_mf_hybrid(in_out_list, variant_list, params, range_lW, range_lH, data_dir)
     # plot_val_ndcg_lW_lH('outputs/out/mf_hybrid/relaxed/')
     # plot_val_ndcg_lW('outputs/out/mf_hybrid/strict/')
     # plot_val_ndcg_lW_lH('outputs/in/mf_hybrid/relaxed/')
     # plot_val_ndcg_lW('outputs/in/mf_hybrid/strict/')
 
-    # Check what happens if ep_it varies (and display the validation plots)
-    train_mh_hybrid_epiter(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
-    #plot_val_mf_hybrid_epiter('out', 'relaxed', params['n_epochs'])
-    #plot_val_mf_hybrid_epiter('out', 'strict', params['n_epochs'])
-    #plot_val_mf_hybrid_epiter('in', 'relaxed', params['n_epochs'])
-    #plot_val_mf_hybrid_epiter('in', 'strict', params['n_epochs'])
+    # Check what happens if ep_it varies
+    n_ep_it_list = [2, 5, 10]
+    train_mh_hybrid_epiter(in_out_list, variant_list, n_ep_it_list, params, data_dir)
 
-    # Display results on the test set
-    test_main_mf_hybrid(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
+    # Display the validation plots as a function of ep_it
+    n_ep_it_list.insert(0, 1)
+    #plot_val_mf_hybrid_epiter('out', 'relaxed', params['n_epochs'], n_ep_it_list)
+    #plot_val_mf_hybrid_epiter('out', 'strict', params['n_epochs'], n_ep_it_list)
+    #plot_val_mf_hybrid_epiter('in', 'relaxed', params['n_epochs'], n_ep_it_list)
+    #plot_val_mf_hybrid_epiter('in', 'strict', params['n_epochs'], n_ep_it_list)
+
+    # Results on the test set
+    test_main_mf_hybrid(in_out_list, variant_list, n_ep_it_list, params, data_dir)
 
 
 # EOF

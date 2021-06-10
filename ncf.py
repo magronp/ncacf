@@ -11,11 +11,11 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings, DatasetAttributesNegsamp
-from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict, wpe_joint, wpe_joint_ncf, wpe_joint_ncacfnew, wpe_joint_neg
-from helpers.eval import evaluate_mf_hybrid, predict_attributes, evaluate_uni
+from helpers.data_feeder import load_tp_data, DatasetAttributesRatings
+from helpers.utils import wpe_joint_ncf
+from helpers.eval import evaluate_uni
 from torch.nn import Module, ModuleList, Linear, Sequential, ReLU, Embedding, Sigmoid, Identity
-
+from matplotlib import pyplot as plt
 
 class ModelNCF(Module):
 
@@ -205,6 +205,22 @@ def test_main_ncf(range_inter, range_nl_di, params, data_dir='data/'):
             test_results_ncf[ii, inl, 1] = ncf_time
     # Record the results
     np.savez('outputs/in/ncf/test_results_ncf.npz', test_results_ncf=test_results_ncf)
+    return
+
+
+def plot_test_ndcg():
+
+    test_ndcg = np.load('outputs/in/ncf/test_results_ncf.npz')['test_results_ncf'][:, :-1, 0]
+
+    plt.figure(0)
+    plt.subplot(2, 1, 1)
+    plt.plot(test_ndcg[0, :].T)
+    plt.ylabel('NDCG (%)')
+    plt.subplot(2, 1, 2)
+    plt.plot(test_ndcg[1, :].T)
+    plt.ylabel('NDCG (%)')
+    plt.xlabel('Q')
+
     return
 
 

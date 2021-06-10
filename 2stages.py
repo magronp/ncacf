@@ -145,14 +145,15 @@ if __name__ == '__main__':
     data_dir = 'data/'
 
     # Training (and display the validation plots)
+    in_out_list, variant_list = ['in'], ['relaxed', 'strict']
     range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-    train_main_2stages(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
+    train_main_2stages(in_out_list, variant_list, params, range_lW, range_lH, data_dir)
     # plot_val_ndcg_lW_lH('outputs/out/2stages/relaxed/')
     # plot_val_ndcg_lW_lH('outputs/out/2stages/strict/')
     # plot_val_ndcg_lW_lH('outputs/in/2stages/strict/')
 
     # Test dans display results
-    test_main_2stages(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
+    test_main_2stages(in_out_list, variant_list, params, data_dir)
 
     # Test WMF (for in-matrix, equivalent to 2stages-relaxed)
     test_main_wmf(params)

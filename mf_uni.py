@@ -93,7 +93,7 @@ if __name__ == '__main__':
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
-              'n_epochs': 100,
+              'n_epochs': 150,
               'lr': 1e-4,
               'device': device
               }
@@ -101,6 +101,7 @@ if __name__ == '__main__':
 
     # Training
     range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
+    in_out_list, variant_list = ['out', 'in'], ['relaxed', 'strict']
     #train_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, range_lW, range_lH, data_dir)
 
     # Plot the validation loss as a function of the hyperparameters
@@ -110,6 +111,6 @@ if __name__ == '__main__':
     # plot_val_ndcg_lW('outputs/in/mf_uni/strict/')
 
     # Testing
-    test_main_mf_uni(['out', 'in'], ['relaxed', 'strict'], params, data_dir)
+    #test_main_mf_uni(in_out_list, variant_list, params, data_dir)
 
 # EOF
