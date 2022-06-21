@@ -117,6 +117,8 @@ def train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, rang
                 path_current = 'outputs/' + setting + '/ncacf/' + inter + '/' + str(nl_di) + '/'
 
                 for variant in variant_list:
+                    print('NCACF -- Setting: ' + setting + ' -  Inter: ' + inter + ' - N_layers: ' + str(
+                        nl_di) + ' - Variant: ' + variant)
                     if nl_di == -1:
                         path_pretrain = None
                     else:
@@ -126,7 +128,6 @@ def train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, rang
                         if variant == 'relaxed':
                             for lW in range_lW:
                                 for lH in range_lH:
-                                    print('Task: ' + setting + ' -  Inter: ' + inter + ' - N_layers: ' + str(nl_di) + ' - Variant: ' + variant)
                                     print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
                                     params['lW'], params['lH'] = lW, lH
                                     params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
@@ -136,7 +137,6 @@ def train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, rang
                             get_optimal_val_model_lW_lH(path_current + 'relaxed/', range_lW, range_lH, params['n_epochs'])
                         else:
                             for lW in range_lW:
-                                print('Task: ' + setting + ' -  Inter: ' + inter + ' - N_layers: ' + str(nl_di) + ' - Variant: ' + variant)
                                 print('lambda_W=' + str(lW))
                                 params['lW'], params['lH'] = lW, 0.
                                 params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
@@ -145,7 +145,6 @@ def train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, rang
                                             variant=variant, inter=inter)
                             get_optimal_val_model_lW(path_current + 'strict/', range_lW, params['n_epochs'])
                     else:
-                        print('Task: ' + setting + ' -  Inter: ' + inter + ' - N_layers: ' + str(nl_di) + ' - Variant: ' + variant)
                         params['lW'], params['lH'] = range_lW[0], range_lH[0]
                         params['out_dir'] = path_current + variant + '/'
                         create_folder(params['out_dir'])

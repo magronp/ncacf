@@ -107,7 +107,7 @@ def train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir
 
     for inter in range_inter:
         for nl_di in range_nl_di:
-
+            print('NCF -- Inter: ' + inter + ' - N_layers: ' + str(nl_di))
             # Define the current working path and the pretraining path, if needed
             path_current = 'outputs/warm/ncf/' + inter + '/' + str(nl_di) + '/'
             if nl_di == -1:
@@ -119,7 +119,7 @@ def train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir
             if val_lambda:
                 for lW in range_lW:
                     for lH in range_lH:
-                        print(lW, lH)
+                        print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
                         params['lW'], params['lH'] = lW, lH
                         params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
                         create_folder(params['out_dir'])
@@ -181,8 +181,8 @@ if __name__ == '__main__':
     data_dir = 'data/'
 
     # Define the hyperparameters over which performing a grid search
-    range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
-    #range_lW, range_lH,  = [0.1], [0.1]
+    #range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
+    range_lW, range_lH,  = [0.1], [0.1]
     range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4, 5]
 
     # Training with validation

@@ -126,7 +126,7 @@ def train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, dat
                     get_optimal_val_model_lW_lH(path_current + 'relaxed/', range_lW, range_lH, params['n_epochs'])
                 else:
                     for lW in range_lW:
-                        print('Task: ' + setting + ' -  Variant: ' + variant)
+                        print('MF-Uni -- Setting: ' + setting + ' -  Variant: ' + variant)
                         print('lambda_W=' + str(lW))
                         params['lW'], params['lH'] = lW, 0.
                         params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
