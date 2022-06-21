@@ -1,5 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+__author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
+__docformat__ = 'reStructuredText'
 
 import json
 import os
@@ -7,7 +9,9 @@ import numpy as np
 import pandas as pd
 import arff
 from sklearn.preprocessing import scale
+from sklearn.model_selection import KFold
 import shutil
+from helpers.utils import create_folder
 
 
 def get_count(tp, id):
@@ -21,7 +25,7 @@ def print_density_level(data_dir='data/'):
     tp = pd.read_csv(data_dir + 'tp.csv')
     usercount, songcount = get_count(tp, 'uid'), get_count(tp, 'sid')
     density_level = float(tp.shape[0]) / (usercount.shape[0] * songcount.shape[0])
-    print("After filtering, there are %d triplets from %d users and %d songs (sparsity level %.3f%%)"
+    print("After filtering, there are %d triplets from %d users and %d songs - density: %.3f%%"
           % (tp.shape[0], usercount.shape[0], songcount.shape[0], density_level*100))
 
     return density_level
@@ -43,11 +47,15 @@ def load_filter_record_tp(data_dir='data/', min_uc=20, min_sc=50, min_c=5):
     # Only keep ratings >= min_c, otherwise they're considered not reliable.
     tp = tp[tp['count'] >= min_c]
 
-    # Only keep the triplets for songs which were listened to by at least min_sc users, and at least min_sc times
+    # Only keep the triplets for songs which were listened to at least 'min_sc' times
     songcount = get_count(tp, 'sid')
-    tp = tp[tp['sid'].isin(songcount.index[songcount >= min_sc])]
+    valid_songs = songcount['sid'][songcount.loc[:, "size"] >= min_sc]
+    tp = tp[tp['sid'].isin(valid_songs)]
+
+    # Only keep the triplets for users who listened to at min_uc songs
     usercount = get_count(tp, 'uid')
-    tp = tp[tp['uid'].isin(usercount.index[usercount >= min_uc])]
+    valid_users = usercount['uid'][usercount.loc[:, "size"] >= min_uc]
+    tp = tp[tp['uid'].isin(valid_users)]
 
     # Record TP
     tp.to_csv(data_dir + 'tp.csv', index=False)
@@ -73,7 +81,6 @@ def load_record_features(data_dir='data/'):
     for ii, row in enumerate(feat_loader):
         current_tid = row._values[-1]
         current_sid = tid_sid.loc[current_tid][0]
-        print(ii)
         if (current_sid in unique_sid) and not(current_sid in list_sid):
             list_sid.append(current_sid)
             features_full = np.concatenate((features_full, np.array(row._values[:-1])[:, np.newaxis]), axis=1)
@@ -133,72 +140,66 @@ def update_tp_record(data_dir='data/'):
     return
 
 
-def split_tp_out(data_dir='data/'):
+def split_cold(data_dir='data/', n_splits=10):
 
-    # Taste profile data
+    # Load Taste profile data and the SSDs features
     tp = pd.read_csv(data_dir + 'tp.csv')
+    my_features = pd.read_csv(data_dir + 'features.csv')
 
-    # List of unique songs
+    # Load the list of unique songs
     unique_sid = []
     with open(data_dir + '/unique_sid.txt', 'r') as f:
         for line in f:
             unique_sid.append(line.strip())
 
-    # Make a 70/20/10 split for train/val/test
+    # Select 20% of the songs as held-out validation data
     n_songs = len(unique_sid)
-    train_sid = unique_sid[:int(0.7 * n_songs)]
-    val_sid = unique_sid[int(0.7 * n_songs):int(0.9 * n_songs)]
-    test_sid = unique_sid[int(0.9 * n_songs):]
+    val_sid = unique_sid[:int(0.2 * n_songs)]
 
-    # Generate in and out of matrix split from TP
-    train_tp = tp[tp['sid'].isin(train_sid)]
+    # Get the corresponding validation TP data and features
     val_tp = tp[tp['sid'].isin(val_sid)]
-    test_tp = tp[tp['sid'].isin(test_sid)]
+    val_feats = my_features[my_features['sid'].isin(val_sid)]
 
-    # Save the .csv
-    train_tp.to_csv(data_dir + 'out/train_tp.csv', index=False)
-    val_tp.to_csv(data_dir + 'out/val_tp.csv', index=False)
-    test_tp.to_csv(data_dir + 'out/test_tp.csv', index=False)
+    # Get the remaining songs IDs
+    train_test_sid = np.array(unique_sid[int(0.2 * n_songs):])
 
-    return
+    # Perform K splits on the remaining data (train and test)
+    kf = KFold(n_splits=n_splits)
+    kf.get_n_splits(train_test_sid)
+    for i_split, (train_index, test_index) in enumerate(kf.split(train_test_sid)):
+        # Songs IDs
+        train_sid = train_test_sid[train_index]
+        test_sid = train_test_sid[test_index]
 
+        # Corresponding TP data
+        train_tp = tp[tp['sid'].isin(train_sid)]
+        test_tp = tp[tp['sid'].isin(test_sid)]
 
-def split_tp_in(data_dir='data/'):
+        # Corresponding features
+        train_feats = my_features[my_features['sid'].isin(train_sid)]
+        test_feats = my_features[my_features['sid'].isin(test_sid)]
 
-    # Taste profile data
-    tp = pd.read_csv(data_dir + 'tp.csv')
+        # Define the current split folder
+        current_path = data_dir + 'cold/split' + str(i_split) + '/'
+        create_folder(current_path)
 
-    # List of unique songs
-    unique_sid = []
-    with open(data_dir + '/unique_sid.txt', 'r') as f:
-        for line in f:
-            unique_sid.append(line.strip())
+        # Save the .csv (TP data and features)
+        train_tp.to_csv(current_path + 'train_tp.csv', index=False)
+        val_tp.to_csv(current_path + 'val_tp.csv', index=False)
+        test_tp.to_csv(current_path + 'test_tp.csv', index=False)
 
-    # Pick out 10% of the rating for in-matrix testing
-    n_ratings = tp.shape[0]
-    test = np.random.choice(n_ratings, size=int(0.1 * n_ratings), replace=False)
-    test_idx = np.zeros(n_ratings, dtype=bool)
-    test_idx[test] = True
-    test_tp = tp[test_idx]
-    tp_notest = tp[~test_idx]
+        train_feats.to_csv(current_path + 'train_feats.csv', index=False)
+        val_feats.to_csv(current_path + 'val_feats.csv', index=False)
+        test_feats.to_csv(current_path + 'test_feats.csv', index=False)
 
-    # Pick out 20% of the (remaining) ratings as validation set
-    n_ratings = tp_notest.shape[0]
-    val = np.random.choice(n_ratings, size=int(0.2/0.9 * n_ratings), replace=False)
-    val_idx = np.zeros(n_ratings, dtype=bool)
-    val_idx[val] = True
-    val_tp = tp_notest[val_idx]
-    train_tp = tp_notest[~val_idx]
-
-    # Save the .csv
-    train_tp.to_csv(data_dir + 'in/train_tp.csv', index=False)
-    val_tp.to_csv(data_dir + 'in/val_tp.csv', index=False)
-    test_tp.to_csv(data_dir + 'in/test_tp.csv', index=False)
+        # Save a copy of the list of unique sid/uid in each directory for convenience
+        shutil.copyfile(data_dir + 'unique_sid.txt', current_path + 'unique_sid.txt')
+        shutil.copyfile(data_dir + 'unique_uid.txt', current_path + 'unique_uid.txt')
 
     return
 
 
-def numerize_tp(data_dir='data/'):
+def numerize_cold(data_dir='data/', n_splits=10):
 
     # Load the user and song to id mappings
     with open(data_dir + 'user2id.json', 'r') as f:
@@ -206,113 +207,112 @@ def numerize_tp(data_dir='data/'):
     with open(data_dir + 'song2id.json', 'r') as f:
         song2id = json.load(f)
 
-    # Numerize all the TP subsets
-    for in_out in ['out/', 'in/']:
-        for subset_to_numerize in ['train_tp', 'test_tp', 'val_tp']:
-            data_tp = pd.read_csv(data_dir + in_out + subset_to_numerize + '.csv')
+    # Numerize all the subsets / splits
+    setting = 'cold'
+    for i_split in range(n_splits):
+        for subset_to_numerize in ['train', 'test', 'val']:
+            current_path = data_dir + setting + '/split' + str(i_split) + '/' + subset_to_numerize
+
+            # TP data
+            data_tp = pd.read_csv(current_path + '_tp.csv')
             uid = list(map(lambda x: user2id[x], data_tp['uid']))
             sid = list(map(lambda x: song2id[x], data_tp['sid']))
             data_tp['uid'] = uid
             data_tp['sid'] = sid
-            data_tp.to_csv(data_dir + in_out + subset_to_numerize + '.num.csv', index=False)
+            data_tp.to_csv(current_path + '_tp.num.csv', index=False)
+
+            # Features
+            data_feats = pd.read_csv(current_path + '_feats.csv')
+            sid = list(map(lambda x: song2id[x], data_feats['sid']))
+            data_feats = data_feats.assign(sid=sid)
+            data_feats.to_csv(current_path + '_feats.num.csv', index=False)
 
     return
 
 
-def split_numerize_features_out(data_dir='data/'):
+def split_warm(data_dir='data/', n_splits=10):
 
-    # Load features
-    my_features = pd.read_csv(data_dir + 'features.csv')
+    # Load Taste profile data
+    tp = pd.read_csv(data_dir + 'tp.csv')
 
-    # List of unique songs
+    # Load the list of unique songs
     unique_sid = []
     with open(data_dir + '/unique_sid.txt', 'r') as f:
         for line in f:
             unique_sid.append(line.strip())
 
-    # Dic for numerization
-    with open(data_dir + 'song2id.json', 'r') as f:
-        song2id = json.load(f)
+    # Pick out 20% of the binarized playcounts for warm-start validation
+    n_playcounts = tp.shape[0]
+    vval = np.random.choice(n_playcounts, size=int(0.2 * n_playcounts), replace=False)
+    val_idx = np.zeros(n_playcounts, dtype=bool)
+    val_idx[vval] = True
+    val_tp = tp[val_idx]
 
-    # Make a 70/20/10 split for train/val/test
-    n_songs = len(unique_sid)
-    train_sid = unique_sid[:int(0.7 * n_songs)]
-    val_sid = unique_sid[int(0.7 * n_songs):int(0.9 * n_songs)]
-    test_sid = unique_sid[int(0.9 * n_songs):]
+    # Get the remaining data for train/test, as well as the corresponding indices
+    train_test_tp = tp[~val_idx]
+    train_test_idx = np.array(train_test_tp.index.values.tolist())
 
-    # Generate in and out of matrix split from features
-    train_feats = my_features[my_features['sid'].isin(train_sid)]
-    val_feats = my_features[my_features['sid'].isin(val_sid)]
-    test_feats = my_features[my_features['sid'].isin(test_sid)]
+    # Perform K splits on the remaining data (train and test)
+    kf = KFold(n_splits=n_splits)
+    kf.get_n_splits(train_test_idx)
 
-    train_feats.to_csv(data_dir + 'out/train_feats.csv', index=False)
-    val_feats.to_csv(data_dir + 'out/val_feats.csv', index=False)
-    test_feats.to_csv(data_dir + 'out/test_feats.csv', index=False)
+    for i_split, (train_index, test_index) in enumerate(kf.split(train_test_idx)):
 
-    # Numerize and record
-    sid_train = list(map(lambda x: song2id[x], train_feats['sid']))
-    train_feats = train_feats.assign(sid=sid_train)
-    train_feats.to_csv(data_dir + 'out/train_feats.num.csv', index=False)
-    sid_val = list(map(lambda x: song2id[x], val_feats['sid']))
-    val_feats = val_feats.assign(sid=sid_val)
-    val_feats.to_csv(data_dir + 'out/val_feats.num.csv', index=False)
-    sid_test = list(map(lambda x: song2id[x], test_feats['sid']))
-    test_feats = test_feats.assign(sid=sid_test)
-    test_feats.to_csv(data_dir + 'out/test_feats.num.csv', index=False)
+        # Indices
+        train_idx = train_test_idx[train_index]
+        test_idx = train_test_idx[test_index]
 
-    return
+        # Corresponding TP data
+        train_tp = train_test_tp.loc[train_idx]
+        test_tp = train_test_tp.loc[test_idx]
 
+        # Define the current split folder
+        current_path = data_dir + 'warm/split' + str(i_split) + '/'
+        create_folder(current_path)
 
-def numerize_features_in(data_dir='data/'):
+        # Save the .csv (TP data and features)
+        train_tp.to_csv(current_path + 'train_tp.csv', index=False)
+        val_tp.to_csv(current_path + 'val_tp.csv', index=False)
+        test_tp.to_csv(current_path + 'test_tp.csv', index=False)
 
-    # Load features
-    my_features = pd.read_csv(data_dir + 'features.csv')
+        # Save a copy of the list of unique sid/uid in each directory for convenience
+        shutil.copyfile(data_dir + 'unique_sid.txt', current_path + 'unique_sid.txt')
+        shutil.copyfile(data_dir + 'unique_uid.txt', current_path + 'unique_uid.txt')
 
-    # Dic for numerization
-    with open(data_dir + 'song2id.json', 'r') as f:
-        song2id = json.load(f)
-
-    # Numerize and record
-    sid_features = list(map(lambda x: song2id[x], my_features['sid']))
-    my_features = my_features.assign(sid=sid_features)
-    my_features.to_csv(data_dir + 'in/feats.num.csv', index=False)
+        # Copy the features in each subfolder
+        shutil.copyfile(data_dir + 'features.csv', current_path + 'features.csv')
 
     return
 
 
-def gen_neg_tp(data_dir='data/', in_out='out', neg_ratio=5):
+def numerize_warm(data_dir='data/', n_splits=10):
 
-    path_data = data_dir + in_out + '/'
+    # Load the user and song to id mappings
+    with open(data_dir + 'user2id.json', 'r') as f:
+        user2id = json.load(f)
+    with open(data_dir + 'song2id.json', 'r') as f:
+        song2id = json.load(f)
 
-    n_users = len(open(path_data + 'unique_uid.txt').readlines())
-    n_songs_train = len(open(path_data + 'unique_sid.txt').readlines())
-    if in_out == 'out':
-        n_songs_train = int(0.7 * n_songs_train)
-    list_items_total = np.arange(n_songs_train)
+    # Numerize all the subsets / splits
+    setting = 'warm'
+    for i_split in range(n_splits):
+        for subset_to_numerize in ['train', 'test', 'val']:
+            current_path = data_dir + setting + '/split' + str(i_split) + '/' + subset_to_numerize
 
-    # TP data
-    train_tp_data = pd.read_csv(path_data + 'train_tp.num.csv')
-    val_tp_data = pd.read_csv(path_data + 'val_tp.num.csv')
-    test_tp_data = pd.read_csv(path_data + 'test_tp.num.csv')
-    list_users_train = pd.unique(train_tp_data['uid'])
+            # TP data
+            data_tp = pd.read_csv(current_path + '_tp.csv')
+            uid = list(map(lambda x: user2id[x], data_tp['uid']))
+            sid = list(map(lambda x: song2id[x], data_tp['sid']))
+            data_tp['uid'] = uid
+            data_tp['sid'] = sid
+            data_tp.to_csv(current_path + '_tp.num.csv', index=False)
 
-    # Neg sampling item lists
-    n_songs_neg = neg_ratio - 1
-    item_neg_sampling = np.zeros((n_users, n_songs_neg))
-
-    # Negative sampling of items for each user
-    for u in list_users_train:
-        list_items_u_train = np.unique(train_tp_data[train_tp_data['uid'] == u]['sid'])
-        list_items_samples_u = np.delete(list_items_total, list_items_u_train)
-        if in_out == 'in':
-            list_items_u_val = np.unique(val_tp_data[val_tp_data['uid'] == u]['sid'])
-            list_items_u_test = np.unique(test_tp_data[test_tp_data['uid'] == u]['sid'])
-            list_items_samples_u = np.delete(list_items_samples_u, list_items_u_val)
-            list_items_samples_u = np.delete(list_items_samples_u, list_items_u_test)
-        item_neg_sampling[u, :] = np.random.choice(list_items_samples_u, n_songs_neg, replace=False)
-
-    # Store the result
-    np.savez(path_data + 'train_tp_neg.num.npz', neg_items=item_neg_sampling)
+        # Features
+        current_path = data_dir + setting + '/split' + str(i_split) + '/'
+        data_feats = pd.read_csv(current_path + 'features.csv')
+        sid = list(map(lambda x: song2id[x], data_feats['sid']))
+        data_feats = data_feats.assign(sid=sid)
+        data_feats.to_csv(current_path + 'feats.num.csv', index=False)
 
     return
 
@@ -324,7 +324,7 @@ if __name__ == '__main__':
 
     MIN_USER_COUNT, MIN_SONG_COUNT, MIN_COUNT = 20, 50, 7
     data_dir = 'data/'
-    neg_ratio = 5
+    n_splits = 10
 
     # Load the TP data and filter out inactive data
     load_filter_record_tp(data_dir, min_uc=MIN_USER_COUNT, min_sc=MIN_SONG_COUNT, min_c=MIN_COUNT)
@@ -332,28 +332,16 @@ if __name__ == '__main__':
     # Process the song features
     load_record_features(data_dir)
 
-    # Update the TP songs (to keep only those for which there are available features)
+    # Update the TP songs (to keep only those for which there are available features), and print the density level
     update_tp_record(data_dir)
+    density_level = print_density_level(data_dir)
 
-    # Print the density level
-    print_density_level(data_dir)
+    # Create the various splits (and numerize files) for the cold-start scenario
+    split_cold(data_dir=data_dir, n_splits=n_splits)
+    numerize_cold(data_dir=data_dir, n_splits=n_splits)
 
-    # Create train / validation / test split for in and out recommendation and numerize the song and user ids
-    split_tp_out(data_dir)
-    split_tp_in(data_dir)
-    numerize_tp(data_dir)
-
-    # Same for the features (no need for splitting them for 'in' recommendation)
-    split_numerize_features_out(data_dir)
-    numerize_features_in(data_dir)
-
-    # Copy the list of user/song IDs in both directory
-    shutil.copyfile(data_dir + 'unique_sid.txt', data_dir + 'out/unique_sid.txt')
-    shutil.copyfile(data_dir + 'unique_sid.txt', data_dir + 'in/unique_sid.txt')
-    shutil.copyfile(data_dir + 'unique_uid.txt', data_dir + 'out/unique_uid.txt')
-    shutil.copyfile(data_dir + 'unique_uid.txt', data_dir + 'in/unique_uid.txt')
-
-    # Negative sampling
-    gen_neg_tp(data_dir=data_dir, in_out='out', neg_ratio=neg_ratio)
+    # Same for the warm-start scenario
+    split_warm(data_dir=data_dir, n_splits=n_splits)
+    numerize_warm(data_dir=data_dir, n_splits=n_splits)
 
 # EOF

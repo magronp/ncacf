@@ -9,12 +9,12 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributesRatings
+from helpers.data_feeder import load_tp_data, DatasetPlaycounts
 from helpers.models import ModelMFuni, evaluate_uni
 from helpers.metrics import wpe_joint
-from helpers.functions import create_folder, init_model_joint
+from helpers.functions import create_folder
 from matplotlib import pyplot as plt
-from helpers.training import train_mf_uni
+from old.training import train_mf_uni
 
 
 
@@ -49,7 +49,7 @@ def train_mf_uni(params, path_pretrain=None, variant='relaxed'):
     torch.autograd.set_detect_anomaly(True)
 
     # Define the dataset
-    my_dataset = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Loop over epochs
@@ -186,6 +186,33 @@ def pretrain_val_mf_uni_strict(params, range_lW, plotval=True):
             if il == 0 or il == 3:
                 plt.ylabel('NDCG (%)')
         plt.show()
+
+    return
+
+
+def test_main_mf_uni(setting_list, variant_list, params, data_dir='data/'):
+
+    for setting in setting_list:
+        # Define the dataset and output path depending on if it's in/out task
+        path_current = 'outputs/' + setting + '/mf_uni/'
+        params['data_dir'] = data_dir + setting + '/split0/'
+        # Number of users and songs for the test
+        n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+        n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+        if setting == 'cold':
+            n_songs_train = int(0.8 * 0.9 * n_songs_total)
+        else:
+            n_songs_train = n_songs_total
+
+        # Loop over variants
+        for variant in variant_list:
+            my_model = ModelMFuni(n_users, n_songs_train, params['n_embeddings'], params['n_features_in'],
+                                  params['n_features_hidden'], variant)
+            my_model.load_state_dict(torch.load(path_current + variant + '/model.pt'))
+            my_model.to(params['device'])
+            print('Task: ' + setting + ' -  Variant: ' + variant)
+            print('NDCG: ' + str(evaluate_uni(params, my_model, setting=setting, split='test')))
+            print('Time: ' + str(np.load(path_current + variant + '/training.npz')['time']))
 
     return
 

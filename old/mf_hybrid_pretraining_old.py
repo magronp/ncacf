@@ -11,7 +11,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings
+from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetPlaycounts
 from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict
 from helpers.eval import evaluate_mf_hybrid, predict_attributes
 
@@ -91,7 +91,7 @@ def train_baseline_strict_pretraining(params, path_pretrain):
     W = np.load(os.path.join(path_pretrain, 'wmf.npz'))['W']
 
     # Dataset
-    my_dataset = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Optimizer
@@ -268,7 +268,7 @@ def train_mf_hybrid_strict_pretraining(params, path_pretrain):
     my_dataloader_attr = DataLoader(my_dataset_attr, params['batch_size'], shuffle=False, drop_last=False)
 
     # Define the dataset
-    my_dataset_tr = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset_tr = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
     my_dataloader_tr = DataLoader(my_dataset_tr, params['batch_size'], shuffle=True, drop_last=True)
 
     # Training setup

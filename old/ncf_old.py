@@ -3,18 +3,17 @@
 
 import numpy as np
 import torch
-from helpers.utils import create_folder, get_optimal_val_model_relaxed
-from helpers.training import train_ncf_in
+from helpers.utils import create_folder, get_optimal_val_model_lW_lH
 import os
 import time
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings, DatasetAttributesNegsamp
-from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict, wpe_joint, wpe_joint_ncf, wpe_joint_ncacfnew, wpe_joint_neg
-from helpers.eval import evaluate_mf_hybrid, predict_attributes, evaluate_uni
-from torch.nn import Module, ModuleList, Linear, Sequential, ReLU, Embedding, Sigmoid, Identity
+from helpers.data_feeder import load_tp_data, DatasetPlaycounts, DatasetAttributesNegsamp
+from helpers.utils import wpe_joint_ncf, wpe_joint_neg
+from helpers.eval import evaluate_uni
+from torch.nn import Module, ModuleList, Linear, Sequential, ReLU, Embedding, Identity
 
 
 class ModelMFuninocontent(Module):
@@ -219,7 +218,7 @@ def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult'):
     torch.autograd.set_detect_anomaly(True)
 
     # Define the dataset
-    my_dataset = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Loop over epochs
@@ -384,7 +383,7 @@ def train_mf_uni_nocontent(params):
     torch.autograd.set_detect_anomaly(True)
 
     # Define the dataset
-    my_dataset = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Loop over epochs
@@ -448,7 +447,7 @@ def train_main_ncf(params, range_lW, range_lH, data_dir='data/', path_pretrain=N
                 create_folder(params['out_dir'])
                 train_ncf(params, path_pretrain=path_pretrain)
                 #train_ncf_negsamp(params, neg_ratio=5, path_pretrain=path_pretrain)
-        get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
+        get_optimal_val_model_lW_lH(path_current, range_lW, range_lH, params['n_epochs'])
     else:
         params['lW'], params['lH'] = range_lW[0], range_lH[0]
         params['out_dir'] = path_current
@@ -472,12 +471,42 @@ def train_main_mf_uni_nocontent(params, range_lW, range_lH, data_dir='data/'):
                 params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
                 create_folder(params['out_dir'])
                 train_mf_uni_nocontent(params)
-        get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
+        get_optimal_val_model_lW_lH(path_current, range_lW, range_lH, params['n_epochs'])
     else:
         params['lW'], params['lH'] = range_lW[0], range_lH[0]
         params['out_dir'] = path_current
         create_folder(params['out_dir'])
         train_mf_uni_nocontent(params)
+    return
+
+
+def test_main_ncf(range_inter, range_nl_di, params, data_dir='data/'):
+
+    test_results_ncf = np.zeros((2, 7, 2))
+    params['data_dir'] = data_dir + 'in/'
+
+    for ii, inter in enumerate(range_inter):
+        for inl, nl_di in enumerate(range_nl_di):
+            path_current = 'outputs/in/ncf/' + inter + '/' + str(nl_di) + '/'
+            # Number of users and songs for the test
+            n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+            n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+            n_songs_train = n_songs_total
+            # Load model
+            my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'], nl_di, inter)
+            my_model.load_state_dict(torch.load(path_current + '/model.pt'))
+            my_model.to(params['device'])
+            # Evaluate the model on the test set
+            ncf_ndcg = evaluate_uni(params, my_model, setting='warm', split='test') * 100
+            ncf_time = np.load(path_current + '/training.npz')['time']
+            # Display and store the results
+            print('Inter: ' + inter + ' -  Layers DI: ' + str(nl_di))
+            print('NDCG: ' + str(ncf_ndcg) + 'Time: ' + str(ncf_time))
+            test_results_ncf[ii, inl, 0] = ncf_ndcg
+            test_results_ncf[ii, inl, 1] = ncf_time
+    # Record the results
+    np.savez('outputs/in/ncf/test_results_ncf.npz', test_results_ncf=test_results_ncf)
+
     return
 
 
@@ -492,9 +521,9 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 8,
+    params = {'batch_size': 8, #128
               'n_embeddings': 128,
-              'n_epochs': 100,
+              'n_epochs': 1, #100
               'lr': 1e-4,
               'device': device
               }

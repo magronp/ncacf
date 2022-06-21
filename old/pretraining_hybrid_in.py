@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from helpers.utils import create_folder
-from helpers.training import pretrain
 import numpy as np
 import os
 import time
@@ -11,10 +10,10 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings
-from helpers.utils import compute_factor_wmf_deep, init_weights, wpe_hybrid_strict, wpe_joint, init_ncacf, plot_grad_flow
-from helpers.models import ModelAttributes, ModelMFuni, ModelNCACF
-from helpers.eval import evaluate_mf_hybrid_in, predict_attributes, evaluate_uni
+from helpers.data_feeder import load_tp_data, DatasetAttributes
+from helpers.utils import compute_factor_wmf_deep
+from helpers.models import ModelAttributes
+from helpers.eval import evaluate_mf_hybrid_in
 
 __author__ = 'Paul Magron -- IRIT, Université de Toulouse, CNRS, France'
 __docformat__ = 'reStructuredText'

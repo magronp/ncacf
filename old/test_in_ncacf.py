@@ -10,7 +10,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributesRatings
+from helpers.data_feeder import load_tp_data, DatasetPlaycounts
 from helpers.utils import wpe_joint, init_ncacf, plot_grad_flow
 from helpers.models import ModelNCACF
 from helpers.eval import evaluate_uni_train
@@ -67,7 +67,7 @@ my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
 torch.autograd.set_detect_anomaly(True)
 
 # Define the dataset
-my_dataset = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
 my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
 # Loop over epochs

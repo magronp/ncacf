@@ -3,7 +3,7 @@
 
 import numpy as np
 import torch
-from helpers.utils import create_folder, get_optimal_val_model_relaxed, get_optimal_val_model_strict
+from helpers.utils import create_folder, get_optimal_val_model_lW_lH, get_optimal_val_model_lW
 from helpers.utils import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 from helpers.eval import evaluate_uni
 from helpers.models import ModelMFuni
@@ -94,7 +94,7 @@ def train_val_mf_uni_relaxed_out(path_current, params, range_lW, range_lH):
             params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
             create_folder(params['out_dir'])
             train_mf_uni_out(params, variant='relaxed')
-    get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
+    get_optimal_val_model_lW_lH(path_current, range_lW, range_lH, params['n_epochs'])
 
     return
 
@@ -107,7 +107,7 @@ def train_val_mf_uni_strict_out(path_current, params, range_lW):
         params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
         create_folder(params['out_dir'])
         train_mf_uni_out(params, variant='strict')
-    get_optimal_val_model_strict(path_current, range_lW, params['n_epochs'])
+    get_optimal_val_model_lW(path_current, range_lW, params['n_epochs'])
 
     return
 

@@ -4,9 +4,8 @@
 import numpy as np
 import torch
 from helpers.utils import create_folder
-from helpers.training import train_ncacf
+from old.training import train_ncacf
 from helpers.eval import evaluate_uni
-from matplotlib import pyplot as plt
 
 
 def train_ncacf_mult(params):

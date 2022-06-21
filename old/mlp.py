@@ -10,7 +10,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings
+from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetPlaycounts
 from helpers.utils import wpe_joint
 from helpers.models import ModelMFuni
 from helpers.eval import evaluate_uni
@@ -133,7 +133,7 @@ def train_mlp(params, path_pretrain=None, in_out='out', variant='relaxed', inter
     torch.autograd.set_detect_anomaly(True)
 
     # Define the dataset
-    my_dataset = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Loop over epochs

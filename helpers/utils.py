@@ -1,5 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+__author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
+__docformat__ = 'reStructuredText'
 
 import shutil
 import numpy as np
@@ -9,7 +11,9 @@ import bottleneck as bn
 from scipy import sparse
 from joblib import Parallel, delayed
 from numba import jit
-from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 
 
 def create_folder(path):
@@ -18,9 +22,7 @@ def create_folder(path):
     return
 
 
-def get_optimal_val_model_relaxed(path_current, range_lW, range_lH, n_epochs):
-
-    path_current = path_current + 'relaxed/'
+def get_optimal_val_model_lW_lH(path_current, range_lW, range_lH, n_epochs):
 
     # Load the validation score for the pretrained models
     Nw, Nh = len(range_lW), len(range_lH)
@@ -45,9 +47,7 @@ def get_optimal_val_model_relaxed(path_current, range_lW, range_lH, n_epochs):
     return
 
 
-def get_optimal_val_model_strict(path_current, range_lW, n_epochs):
-
-    path_current = path_current + 'strict/'
+def get_optimal_val_model_lW(path_current, range_lW, n_epochs):
 
     # Load the validation score for the pretrained models
     Nw = len(range_lW)
@@ -199,7 +199,7 @@ def user_idx_generator(n_users, batch_users):
 
 
 # NDCG for out-of-matrix prediction
-def my_ndcg_out(true_ratings, pred_ratings, batch_users=5000, k=None):
+def my_ndcg_cold(true_ratings, pred_ratings, batch_users=5000, k=None):
 
     # Iterate over user batches
     res = list()

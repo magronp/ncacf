@@ -4,7 +4,7 @@
 import numpy as np
 import torch
 from helpers.utils import create_folder
-from helpers.training import train_ncacf
+from old.training import train_ncacf
 from helpers.eval import evaluate_uni
 from matplotlib import pyplot as plt
 
@@ -24,6 +24,40 @@ def train_all_ncacf():
 
     return
 
+def test_main_ncacf(setting_list, variant_list, range_inter, range_nl_di, params, data_dir='data/'):
+
+    test_results_ncacf = np.zeros((2, 2, 2, 7, 2))
+    for i_io, setting in enumerate(setting_list):
+        params['data_dir'] = data_dir + setting + '/'
+        # Number of users and songs for the test
+        n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+        n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+        if setting == 'cold':
+            n_songs_train = int(0.8 * 0.9 * n_songs_total)
+        else:
+            n_songs_train = n_songs_total
+
+        for ii, inter in enumerate(range_inter):
+            for inl, nl_di in enumerate(range_nl_di):
+                for iv, variant in enumerate(variant_list):
+                    # Load model
+                    path_current = 'outputs/' + setting + '/ncacf/' + inter + '/' + str(nl_di) + '/' + variant + '/'
+                    my_model = ModelNCACF(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
+                                  params['n_embeddings'], nl_di, variant, inter)
+                    my_model.load_state_dict(torch.load(path_current + '/model.pt'))
+                    my_model.to(params['device'])
+                    # Evaluate the model on the test set
+                    ncacf_ndcg = evaluate_uni(params, my_model, setting=setting, split='test') * 100
+                    ncacf_time = np.load(path_current + '/training.npz')['time']
+                    # Display and store the results
+                    print('Task: ' + setting + ' -  Inter: ' + inter + ' - N_layers: ' + str(nl_di) + ' - Variant: ' + variant)
+                    print('NDCG: ' + str(ncacf_ndcg) + 'Time: ' + str(ncacf_time))
+                    test_results_ncacf[i_io, ii, iv, inl, 0] = ncacf_ndcg
+                    test_results_ncacf[i_io, ii, iv, inl, 1] = ncacf_time
+    # Record the results
+    np.savez('outputs/test_results_ncacf.npz', test_results_ncacf=test_results_ncacf)
+
+    return
 
 def subtrain_all_ncacf():
 

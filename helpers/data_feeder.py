@@ -1,5 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+__author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
+__docformat__ = 'reStructuredText'
 
 import numpy as np
 import pandas as pd
@@ -8,53 +10,34 @@ from torch.utils.data import Dataset
 import scipy.sparse
 
 
-def log_surplus_confidence_matrix(R, alpha, epsilon):
-    # To construct the surplus confidence matrix, we need to operate only on
-    # the nonzero elements.
-    # This is not possible: C = alpha * np.log(1 + R / epsilon)
-    C = R.copy()
-    C.data = alpha * np.log(1 + C.data / epsilon)
-    return C
+def load_tp_data(csv_file, setting='warm', alpha=2.0, epsilon=1e-6):
 
+    # Get the number of users and songs in the eval set as well as the dataset for evaluation
+    n_users = len(open('data/unique_uid.txt').readlines())
+    n_songs_total = len(open('data/unique_sid.txt').readlines())
 
-def load_tp_data(csv_file, shape, alpha=2.0, epsilon=1e-6):
+    # Load the TP data in csv format
     tp = pd.read_csv(csv_file)
+
+    # Get the list of songs, user, and counts
     rows, cols = np.array(tp['uid'], dtype=np.int32), np.array(tp['sid'], dtype=np.int32)
     count = tp['count']
-    sparse_tp = scipy.sparse.csr_matrix((count, (rows, cols)), dtype=np.int16, shape=shape)
+
+    # Build the sparse matrix
+    sparse_tp = scipy.sparse.csr_matrix((count, (rows, cols)), dtype=np.int16, shape=(n_users, n_songs_total))
+
+    # Now only retain the non-empty cols of the matrix (useful in the cold-start setting)
+    if setting == 'cold':
+        sparse_tp = sparse_tp[:, np.unique(cols)]
+
     # Binarize the playcounts
     sparse_tp.data = np.ones_like(sparse_tp.data)
+
     # Get the confidence
     conf = sparse_tp.copy()
     conf.data = alpha * np.log(1 + conf.data / epsilon)
+
     return sparse_tp, rows, cols, conf
-
-
-def load_tp_data_old(csv_file, shape, alpha=2.0, epsilon=1e-6):
-    tp = pd.read_csv(csv_file)
-    rows, cols = np.array(tp['uid'], dtype=np.int32), np.array(tp['sid'], dtype=np.int32)
-    count = tp['count']
-    sparse_tp = scipy.sparse.csr_matrix((count, (rows, cols)), dtype=np.int16, shape=shape)
-    # Binarize the playcounts
-    sparse_tp.data = np.ones_like(sparse_tp.data)
-    # Get the confidence from binarized playcounts directly
-    conf = sparse_tp.copy()
-    conf.data[conf.data == 0] = 0.01
-    conf.data -= 1  # conf surplus (used in WMF implementation)
-    return sparse_tp, rows, cols, conf
-
-
-def load_tp_data_sparse(csv_file, n_users, n_songs):
-
-    tp = pd.read_csv(csv_file)
-    indices = torch.tensor([tp['uid'], tp['sid']], dtype=torch.long)
-    #values = torch.ones_like(torch.tensor(tp['count'], dtype=torch.float32))
-    values = torch.tensor(tp['count'], dtype=torch.float32)
-
-    # Construct a sparse tensor
-    tp_sparse_tens = torch.sparse.FloatTensor(indices, values, torch.Size([n_users, n_songs]))
-
-    return tp_sparse_tens
 
 
 class DatasetAttributes(Dataset):
@@ -63,6 +46,7 @@ class DatasetAttributes(Dataset):
 
         # Acoustic content features
         features = pd.read_csv(features_path).to_numpy()
+        # Sort according to the SID to ensure consistent feature/TP
         features = features[features[:, 0].argsort()]
         x = np.delete(features, 0, axis=1)
 
@@ -81,51 +65,24 @@ class DatasetAttributes(Dataset):
         return self.x[item, :], self.h[item, :], item
 
 
-class DatasetAttributesNegsamp(Dataset):
-
-    def __init__(self, features_path, tp_path, tp_neg, n_users, n_songs):
-
-        # Acoustic content features
-        features = pd.read_csv(features_path).to_numpy()
-        features = features[features[:, 0].argsort()]
-        x = np.delete(features, 0, axis=1)
-        self.x = torch.tensor(x).float()
-
-        # TP data
-        tp_data = load_tp_data_sparse(tp_path, n_users, n_songs)
-        tp_data = tp_data.coalesce()
-        self.us, self.it = tp_data.indices()
-        self.count = tp_data.values()
-
-        # Also load the list of negative samples (=items) per user
-        self.neg_items = torch.tensor(np.load(tp_neg)['neg_items'], dtype=torch.long)
-
-    def __len__(self):
-        return self.count.__len__()
-
-    def __getnegitem__(self, us_pos):
-        return self.neg_items[us_pos, :]
-
-    def __getitem__(self, data_point):
-
-        us_pos, it_pos, count_pos = self.us[data_point], self.it[data_point], self.count[data_point]
-        it_neg = self.__getnegitem__(us_pos)
-
-        return self.x[it_pos, :], self.x[it_neg, :], us_pos, count_pos, it_pos, it_neg
-
-
-class DatasetAttributesRatings(Dataset):
+class DatasetPlaycounts(Dataset):
 
     def __init__(self, features_path, tp_path, n_users):
 
         # Acoustic content features
         features = pd.read_csv(features_path).to_numpy()
+        # The first column is the (num) SID, so sort by it
         features = features[features[:, 0].argsort()]
+        # Remove the SID colmn: now the songs are indexed from 0 to n_songs-1
         x = np.delete(features, 0, axis=1)
         self.x = torch.tensor(x).float()
 
         # TP data
         self.tp_data = pd.read_csv(tp_path)
+        # Also need to care about SIDs, as for cold-start these do not match: we want them to range from 0 to n_songs-1
+        self.tp_data['sid'] -= self.tp_data['sid'].min()
+
+        # Store the number of users
         self.n_users = n_users
 
     def __len__(self):
@@ -137,29 +94,5 @@ class DatasetAttributesRatings(Dataset):
         u_counts[u_pos] = 1
         return self.x[data_point, :], u_counts, data_point
 
-
-class DatasetJointEval(Dataset):
-
-    def __init__(self, path_features, n_users, n_songs):
-
-        # Acoustic content features
-        features = pd.read_csv(path_features).to_numpy()
-        features = features[features[:, 0].argsort()]
-        x = np.delete(features, 0, axis=1)
-        self.x = torch.tensor(x).float()
-
-        # List with all users and items in the set
-        self.n_users = n_users
-        self.n_songs = n_songs
-
-    def __len__(self):
-        return self.n_users * self.n_songs
-
-    def __getitem__(self, data_point):
-
-        us = data_point // self.n_songs
-        it = data_point % self.n_songs
-
-        return self.x[it, :], us, it
 
 # EOF

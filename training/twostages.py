@@ -1,11 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+__author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
+__docformat__ = 'reStructuredText'
 
 from helpers.utils import create_folder, plot_val_ndcg_lW_lH
 import numpy as np
-import torch
 import os
 import time
+import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
@@ -14,26 +16,24 @@ from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetPlaycoun
 from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict
 from helpers.models import ModelAttributes
 from helpers.eval import evaluate_mf_hybrid
-
-__author__ = 'Paul Magron -- IRIT, Université de Toulouse, CNRS, France'
-__docformat__ = 'reStructuredText'
+import copy
 
 
-def train_wmf(params):
+def train_wmf(params, setting, rec_model=True):
 
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
 
     # Get the number of songs and users
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs_train = int(0.7 * len(open(params['data_dir'] + 'unique_sid.txt').readlines()))
+    n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    if setting == 'cold':
+        n_songs_train = int(0.8 * 0.9 * n_songs_train)
 
     # Path for the features and the WMF
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
-    path_wmf = os.path.join(params['out_dir'], 'wmf.npz')
 
     # Get the playcount data, confidence, and precompute its transpose
-    train_data, _, _, conf = load_tp_data(path_tp_train, shape=(n_users, n_songs_train))
+    train_data, _, _, conf = load_tp_data(path_tp_train, setting)
     confT = conf.T.tocsr()
 
     print('\n Update WMF factors...')
@@ -45,16 +45,21 @@ def train_wmf(params):
     time_wmf = time.time() - start_time_wmf
 
     # Save the WMF parameters (and computational time)
-    np.savez(path_wmf, W=W, H=H, time_wmf=time_wmf)
+    if rec_model:
+        path_wmf = os.path.join(params['out_dir'], 'wmf.npz')
+        np.savez(path_wmf, W=W, H=H, time_wmf=time_wmf)
 
-    return
+    return W, H
 
 
-def train_2stages_relaxed(params):
+def train_2stages_relaxed(params, setting, rec_model=True):
 
     # Path for the features and the pre-calculated WMF
-    path_features = params['data_dir'] + 'train_feats.num.csv'
     path_wmf = os.path.join(params['out_dir'], 'wmf.npz')
+    if setting == 'cold':
+        path_features = os.path.join(params['data_dir'], 'train_feats.num.csv')
+    else:
+        path_features = os.path.join(params['data_dir'], 'feats.num.csv')
 
     # Model parameters and definition
     my_model = ModelAttributes(params['n_features_in'], params['n_features_hidden'],
@@ -73,9 +78,12 @@ def train_2stages_relaxed(params):
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
     torch.autograd.set_detect_anomaly(True)
 
-    # Model update
+    # Initialize training log and optimal copies
     time_tot, loss_tot, val_ndcg_tot = time_wmf, [], []
     time_opt, ndcg_opt = time_tot, 0
+    model_opt = copy.deepcopy(my_model)
+
+    # Training loop
     my_model.train()
     for ep in range(params['n_epochs']):
         print('\nEpoch {e_:4d}/{e:4d}'.format(e_=ep + 1, e=params['n_epochs']), flush=True)
@@ -97,7 +105,8 @@ def train_2stages_relaxed(params):
         loss_tot.append(loss_ep)
         time_ep = time.time() - start_time_ep
         time_tot += time_ep
-        val_ndcg = evaluate_mf_hybrid(params, W, my_model, split='val')
+
+        val_ndcg = evaluate_mf_hybrid(params, W, None, my_model, setting=setting, variant='relaxed', split='val')
         val_ndcg_tot.append(val_ndcg)
         print('\nLoss: {l:6.6f} | Time: {t:5.3f} | NDCG: {n:5.3f}'.format(l=loss_ep, t=time_ep, n=val_ndcg),
               flush=True)
@@ -106,30 +115,35 @@ def train_2stages_relaxed(params):
         if val_ndcg > ndcg_opt:
             ndcg_opt = val_ndcg
             time_opt = time_tot
-            torch.save(my_model, os.path.join(params['out_dir'], 'model_relaxed.pt'))
+            model_opt = copy.deepcopy(my_model)
 
-    # Record the training log
+    # Record the training log and the optimal model (if needed)
     np.savez(os.path.join(params['out_dir'], 'training_relaxed.npz'), loss=loss_tot, time=time_opt, val_ndcg=val_ndcg_tot)
+    if rec_model:
+        torch.save(model_opt, os.path.join(params['out_dir'], 'model_relaxed.pt'))
 
-    return
+    return model_opt
 
 
-def train_2stages_strict(params):
+def train_2stages_strict(params, setting, rec_model=True):
 
     # Get the number of songs and users
     n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
 
     # Path for the TP training data, features and the WMF
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
-    path_features = params['data_dir'] + 'train_feats.num.csv'
     path_wmf = os.path.join(params['out_dir'], 'wmf.npz')
+    if setting == 'cold':
+        path_features = os.path.join(params['data_dir'], 'train_feats.num.csv')
+    else:
+        path_features = os.path.join(params['data_dir'], 'feats.num.csv')
 
     # Model parameters and definition
     my_model = ModelAttributes(params['n_features_in'], params['n_features_hidden'],
                                params['n_embeddings']).to(params['device'])
     print('Amount of parameters: {}'.format(sum([p.numel() for p in my_model.parameters()])), flush=True)
 
-    # Load the W matrix (used for validation) and WMF time
+    # Load the WMF matrix (used for validation) and WMF time
     wmf_loader = np.load(path_wmf)
     time_wmf, W = wmf_loader['time_wmf'], wmf_loader['W']
 
@@ -141,9 +155,12 @@ def train_2stages_strict(params):
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
     torch.autograd.set_detect_anomaly(True)
 
-    # Model training
+    # Initialize training log and optimal copies
     time_tot, loss_tot, val_ndcg_tot = time_wmf, [], []
     time_opt, ndcg_opt = time_tot, 0
+    model_opt = copy.deepcopy(my_model)
+
+    # Training loop
     my_model.train()
     for ep in range(params['n_epochs']):
         print('\nEpoch {e_:4d}/{e:4d}'.format(e_=ep+1, e=params['n_epochs']), flush=True)
@@ -167,7 +184,7 @@ def train_2stages_strict(params):
         loss_tot.append(loss_ep)
         time_ep = time.time() - start_time_ep
         time_tot += time_ep
-        val_ndcg = evaluate_mf_hybrid(params, W, my_model, split='val')
+        val_ndcg = evaluate_mf_hybrid(params, W, None, my_model, setting=setting, variant='strict', split='val')
         val_ndcg_tot.append(val_ndcg)
         print('\nLoss: {l:6.6f} | Time: {t:5.3f} | NDCG: {n:5.3f}'.format(l=loss_ep, t=time_ep, n=val_ndcg),
               flush=True)
@@ -176,130 +193,120 @@ def train_2stages_strict(params):
         if val_ndcg > ndcg_opt:
             ndcg_opt = val_ndcg
             time_opt = time_tot
-            torch.save(my_model, os.path.join(params['out_dir'], 'model_strict.pt'))
+            model_opt = copy.deepcopy(my_model)
 
     # Record the training log
     np.savez(os.path.join(params['out_dir'], 'training_strict.npz'), loss=loss_tot, time=time_opt, val_ndcg=val_ndcg_tot)
+    if rec_model:
+        torch.save(model_opt, os.path.join(params['out_dir'], 'model_strict.pt'))
 
-    return
-
-
-def train_val_2stages_out(path_current, params, range_lW, range_lH):
-
-    # Loop over hyperparameters
-    for lW in range_lW:
-        for lH in range_lH:
-            print(lW, lH)
-            params['lW'], params['lH'] = lW, lH
-            params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
-            create_folder(params['out_dir'])
-            # First train the WMF
-            train_wmf(params)
-            # Then train the relaxed and strict variant on top of these WMFs
-            train_2stages_relaxed(params)
-            train_2stages_strict(params)
-
-    # Get the optimal models after grid search
-    get_optimal_2stages(path_current, range_lW, range_lH, params['n_epochs'], variant='relaxed')
-    get_optimal_2stages(path_current, range_lW, range_lH, params['n_epochs'], variant='strict')
-
-    return
+    return model_opt
 
 
-def train_noval_2stages_out(path_current, params, lW=0.1, lH=1.):
+def train_2stages(params, variant, setting, rec_model=True):
 
-    # Loop over hyperparameters
-    params['lW'], params['lH'] = lW, lH
-    params['out_dir'] = path_current + 'noval/'
-    create_folder(params['out_dir'])
-    # First train the WMF
-    train_wmf(params)
-    # Then train the relaxed and strict variant on top of these WMFs
-    train_2stages_relaxed(params)
-    train_2stages_strict(params)
+    if variant == 'relaxed':
+        model_opt = train_2stages_relaxed(params, setting, rec_model)
+    else:
+        model_opt = train_2stages_strict(params, setting, rec_model)
 
-    return
+    return model_opt
 
 
-def get_optimal_2stages(path_current, range_lW, range_lH, n_epochs, variant='relaxed'):
-
-    path_out = path_current + variant + '/'
-    create_folder(path_out)
-
-    # Load the validation score for the various models
-    Nw, Nh = len(range_lW), len(range_lH)
-    val_ndcg = np.zeros((Nw, Nh, n_epochs))
-    for iW, lW in enumerate(range_lW):
-        for iH, lH in enumerate(range_lH):
-            path_load = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/training_' + variant + '.npz'
-            val_ndcg[iW, iH, :] = np.load(path_load)['val_ndcg'][:n_epochs] * 100
-
-    # Get the optimal hyperparameters
-    ind_opt = np.unravel_index(np.argmax(val_ndcg, axis=None), val_ndcg.shape)
-    lW_opt, lH_opt = range_lW[ind_opt[0]], range_lH[ind_opt[1]]
-
-    # Record the optimal hyperparameters and the overall validation NDCG
-    np.savez(path_out + 'hyperparams.npz', lW=lW_opt, lH=lH_opt)
-    np.savez(path_out + 'val_ndcg.npz', val_ndcg=val_ndcg, range_lW=range_lW, range_lH=range_lH)
-
-    # Get the optimal model and corresponding training log and copy it
-    path_opt = path_current + 'lW_' + str(lW_opt) + '/lH_' + str(lH_opt) + '/'
-    train_log = np.load(path_opt + 'training_' + variant + '.npz')
-    model_opt = torch.load(path_opt + 'model_' + variant + '.pt')
-    wmf_opt = np.load(path_opt + 'wmf.npz')
-    np.savez(path_out + 'training.npz', loss=train_log['loss'], time=train_log['time'], val_ndcg=train_log['val_ndcg'])
-    np.savez(path_out + 'wmf.npz', W=wmf_opt['W'], H=wmf_opt['H'])
-    torch.save(model_opt, path_out + 'model.pt')
-
-    return
-
-
-
-
-def test_main_2stages(setting_list, variant_list, params, data_dir='data/'):
+def train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir='data/'):
 
     for setting in setting_list:
-        # Define the dataset and output path depending on if it's in/out task
-        params['data_dir'] = data_dir + setting + '/'
-        # Loop over variants
-        for variant in variant_list:
-            if not (variant == 'relaxed' and setting == 'warm'):
-                path_current = 'outputs/' + setting + '/2stages/' + variant + '/'
-                my_model = torch.load(path_current + 'model.pt').to(params['device'])
-                W, H = np.load(path_current + 'wmf.npz')['W'], np.load(path_current + 'wmf.npz')['H']
-                print('Task: ' + setting + ' -  Variant: ' + variant)
-                print('NDCG: ' + str(evaluate_mf_hybrid(params, W, H, my_model, setting=setting, variant=variant, split='test')))
-                print('Time: ' + str(np.load(path_current + 'training.npz')['time']))
+
+        # Define data/outputs paths
+        path_current = 'outputs/' + setting + '/2stages/'
+        params['data_dir'] = data_dir + setting + '/split0/'
+
+        # Loop over hyperparameters
+        for lW in range_lW:
+            for lH in range_lH:
+                print('Task: ' + setting)
+                print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
+                params['lW'], params['lH'] = lW, lH
+                params['out_dir'] = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/'
+                create_folder(params['out_dir'])
+                # First train the WMF
+                train_wmf(params, setting=setting)
+                # Then train the relaxed and strict variant on top of these WMFs
+                for variant in variant_list:
+                    print('Variant: ' + variant)
+                    # Useless to train for the relaxed variant in the warm-start setting (it's juste WMF)
+                    if not(variant == 'relaxed' and setting == 'warm'):
+                        train_2stages(params, variant=variant, setting=setting)
 
     return
 
 
-def test_main_wmf(params):
+def get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, n_epochs):
 
-    params['data_dir'] = 'data/warm/split0'
+    for setting in setting_list:
+        for variant in variant_list:
+            if not (variant == 'relaxed' and setting == 'warm'):
+
+                # Define data/outputs paths
+                path_current = 'outputs/' + setting + '/2stages/'
+                path_out = path_current + variant + '/'
+                create_folder(path_out)
+
+                # Load the validation score for the various models
+                Nw, Nh = len(range_lW), len(range_lH)
+                val_ndcg = np.zeros((Nw, Nh, n_epochs))
+                for iW, lW in enumerate(range_lW):
+                    for iH, lH in enumerate(range_lH):
+                        path_load = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/training_' + variant + '.npz'
+                        val_ndcg[iW, iH, :] = np.load(path_load)['val_ndcg'][:n_epochs] * 100
+
+                # Get the optimal hyperparameters
+                ind_opt = np.unravel_index(np.argmax(val_ndcg, axis=None), val_ndcg.shape)
+                lW_opt, lH_opt = range_lW[ind_opt[0]], range_lH[ind_opt[1]]
+
+                # Record the optimal hyperparameters and the overall validation NDCG
+                np.savez(path_out + 'hyperparams.npz', lW=lW_opt, lH=lH_opt)
+                np.savez(path_out + 'val_ndcg.npz', val_ndcg=val_ndcg, range_lW=range_lW, range_lH=range_lH)
+
+                # Get the optimal model and corresponding training log and copy it
+                path_opt = path_current + 'lW_' + str(lW_opt) + '/lH_' + str(lH_opt) + '/'
+                train_log = np.load(path_opt + 'training_' + variant + '.npz')
+                model_opt = torch.load(path_opt + 'model_' + variant + '.pt')
+                wmf_opt = np.load(path_opt + 'wmf.npz')
+                np.savez(path_out + 'training.npz', loss=train_log['loss'], time=train_log['time'], val_ndcg=train_log['val_ndcg'])
+                np.savez(path_out + 'wmf.npz', W=wmf_opt['W'], H=wmf_opt['H'])
+                torch.save(model_opt, path_out + 'model.pt')
+
+    return
+
+
+def get_optimal_wmf(params, range_lW, range_lH):
+
+    params['data_dir'] = 'data/warm/split0/'
+
     # Selecting the best WMF model (these have already been trained)
     val_ndcg_opt, lW_opt, lH_opt = 0, 0, 0
     for lW in range_lW:
         for lH in range_lH:
             print('Validation...')
             print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
-            path_wmf = 'outputs/in/2stages/lW_' + str(lW) + '/lH_' + str(lH) + '/wmf.npz'
+            path_wmf = 'outputs/warm/2stages/lW_' + str(lW) + '/lH_' + str(lH) + '/wmf.npz'
             W, H = np.load(path_wmf)['W'], np.load(path_wmf)['H']
             val_ndcg = evaluate_mf_hybrid(params, W, H, None, setting='warm', variant='relaxed', split='val')
             if val_ndcg > val_ndcg_opt:
                 val_ndcg_opt = val_ndcg
                 lW_opt, lH_opt = lW, lH
 
-    # Test with the best hyperparameters
-    path_wmf_opt = 'outputs/in/2stages/lW_' + str(lW_opt) + '/lH_' + str(lH_opt) + '/wmf.npz'
-    wmf_load = np.load(path_wmf_opt)
-    W, H, time_wmf = wmf_load['W'], wmf_load['H'], wmf_load['time_wmf']
-    test_ndcg = evaluate_mf_hybrid(params, W, H, None, setting='warm', variant='relaxed', split='val')
-    print('WMF (lambda_W=' + str(lW_opt) + ' lambda_H=' + str(lH_opt) + ')')
-    print('NDCG: ' + str(test_ndcg))
-    print('Time: ' + str(time_wmf))
+    # Load the best performing WMF model and store it conveniently
+    path_wmf_opt = 'outputs/warm/2stages/lW_' + str(lW_opt) + '/lH_' + str(lH_opt) + '/wmf.npz'
+    path_out = 'outputs/warm/WMF/'
+    wmf_opt = np.load(path_wmf_opt)
+    create_folder(path_out)
+    np.savez(path_out + 'hyperparams.npz', lW=lW_opt, lH=lH_opt)
+    np.savez(path_out + 'wmf.npz', W=wmf_opt['W'], H=wmf_opt['H'])
 
     return
+
 
 if __name__ == '__main__':
 
@@ -309,34 +316,34 @@ if __name__ == '__main__':
 
     # Run on GPU (if it's available)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print('Process on: {}'.format(torch.cuda.get_device_name(device)))
+    print('Process on: {}'.format(device))
 
     # Set parameters
     params = {'batch_size': 128,
               'n_embeddings': 128,
               'n_iter_wmf': 30,
-              'n_epochs': 100,
+              'n_epochs': 150,
               'lr': 1e-4,
               'n_features_hidden': 1024,
               'n_features_in': 168,
-              'data_dir': 'data/out/',
               'device': device}
+    data_dir = 'data/'
 
-    path_current = 'outputs/out/2stages/'
-    train_b = True
-    val_b = True
+    # Define the settings (warm and cold start) and the variants (relaxed and strict)
+    setting_list = ['warm', 'cold']
+    variant_list = ['relaxed', 'strict']
 
-    if train_b:
-        if val_b:
-            # Training and validation for the hyperparameters
-            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-            train_val_2stages_out(path_current, params, range_lW, range_lH)
-        else:
-            # Single training with pre-defined hyperparameter
-            train_noval_2stages_out(path_current, params, lW=0.1, lH=1.)
+    # Define the hyperparameters over which performing a grid search
+    range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
 
-    # Plot the validation results
-    plot_val_ndcg_lW_lH(path_current + 'relaxed/')
-    plot_val_ndcg_lW_lH(path_current + 'strict/')
+    # Training with validation. Then, select the best model (and also WMF, which is trained as well)
+    train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+    get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
+    get_optimal_wmf(params, range_lW, range_lH)
+
+    # Display validation results
+    plot_val_ndcg_lW_lH('outputs/cold/2stages/relaxed/')
+    plot_val_ndcg_lW_lH('outputs/cold/2stages/strict/')
+    plot_val_ndcg_lW_lH('outputs/warm/2stages/strict/')
 
 # EOF

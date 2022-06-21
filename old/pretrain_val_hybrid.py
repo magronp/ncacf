@@ -11,7 +11,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings
+from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetPlaycounts
 from helpers.utils import compute_factor_wmf_deep, init_weights, wpe_hybrid_strict
 from helpers.models import ModelAttributes
 from helpers.eval import evaluate_mf_hybrid
@@ -116,7 +116,7 @@ def pretrain_strict(params):
     print('Amount of parameters: {}'.format(sum([p.numel() for p in my_model.parameters()])), flush=True)
 
     # Define the dataset
-    my_dataset = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Optimizer

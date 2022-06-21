@@ -3,9 +3,8 @@
 
 import numpy as np
 import torch
-from helpers.utils import create_folder, get_optimal_val_model_relaxed, get_optimal_val_model_strict
-from helpers.utils import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
-from helpers.training import train_gmf
+from helpers.utils import create_folder, get_optimal_val_model_lW_lH, get_optimal_val_model_lW
+from old.training import train_gmf
 from helpers.eval import evaluate_uni
 from helpers.models import ModelGMF
 
@@ -31,7 +30,7 @@ def train_main_gmf(in_out_list, variant_list, params, range_lW, range_lH, data_d
                             params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
                             create_folder(params['out_dir'])
                             train_gmf(params, variant=variant, in_out=in_out)
-                    get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
+                    get_optimal_val_model_lW_lH(path_current, range_lW, range_lH, params['n_epochs'])
                 else:
                     for lW in range_lW:
                         print('Task: ' + in_out + ' -  Variant: ' + variant)
@@ -40,7 +39,7 @@ def train_main_gmf(in_out_list, variant_list, params, range_lW, range_lH, data_d
                         params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
                         create_folder(params['out_dir'])
                         train_gmf(params, variant='strict', in_out=in_out)
-                    get_optimal_val_model_strict(path_current, range_lW, params['n_epochs'])
+                    get_optimal_val_model_lW(path_current, range_lW, params['n_epochs'])
             else:
                 print('Task: ' + in_out + ' -  Variant: ' + variant)
                 params['lW'], params['lH'] = range_lW[0], range_lH[0]

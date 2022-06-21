@@ -9,11 +9,11 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetAttributesRatings
+from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetPlaycounts
 from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict
 from helpers.models import ModelAttributes
 from helpers.eval import predict_attributes
-from helpers.utils import create_folder, get_optimal_val_model_relaxed, get_optimal_val_model_strict
+from helpers.utils import create_folder, get_optimal_val_model_lW_lH, get_optimal_val_model_lW
 from helpers.utils import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 from matplotlib import pyplot as plt
 from helpers.eval import evaluate_mf_hybrid
@@ -140,7 +140,7 @@ def train_mf_hybrid_strict_out(params):
     my_dataloader_attr = DataLoader(my_dataset_attr, params['batch_size'], shuffle=False, drop_last=False)
 
     # Define the dataset
-    my_dataset_tr = DatasetAttributesRatings(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset_tr = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
     my_dataloader_tr = DataLoader(my_dataset_tr, params['batch_size'], shuffle=True, drop_last=True)
 
     # Training setup
@@ -224,7 +224,7 @@ def train_val_mh_hybrid_out(params, range_lW, range_lH):
             params['out_dir'] = path_current + variant + '/lW_' + str(lW) + '/lH_' + str(lH) + '/'
             create_folder(params['out_dir'])
             train_mf_hybrid_out(params, variant=variant)
-    get_optimal_val_model_relaxed(path_current, range_lW, range_lH, params['n_epochs'])
+    get_optimal_val_model_lW_lH(path_current, range_lW, range_lH, params['n_epochs'])
 
     # Strict variant
     variant = 'strict'
@@ -234,7 +234,7 @@ def train_val_mh_hybrid_out(params, range_lW, range_lH):
         params['out_dir'] = path_current + variant + '/lW_' + str(lW) + '/'
         create_folder(params['out_dir'])
         train_mf_hybrid_out(params, variant=variant)
-    get_optimal_val_model_strict(path_current, range_lW, params['n_epochs'])
+    get_optimal_val_model_lW(path_current, range_lW, params['n_epochs'])
 
     return
 
