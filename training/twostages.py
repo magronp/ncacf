@@ -3,7 +3,8 @@
 __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
-from helpers.utils import create_folder, plot_val_ndcg_lW_lH
+from helpers.utils import create_folder
+from helpers.plotters import plot_val_ndcg_lW_lH
 import numpy as np
 import os
 import time

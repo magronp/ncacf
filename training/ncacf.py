@@ -16,9 +16,7 @@ from tqdm import tqdm
 from helpers.data_feeder import load_tp_data, DatasetPlaycounts
 from helpers.eval import evaluate_uni
 import copy
-import matplotlib
-matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
+from helpers.plotters import plot_val_ndcg_ncacf
 
 
 def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', variant='relaxed', inter='mult', rec_model=True):
@@ -185,31 +183,6 @@ def get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di):
     # Also record the overall validation scores (for plotting)
     np.savez('outputs/warm/ncacf/val_results.npz', val_ndcg=val_ndcg[0, :])
     np.savez('outputs/cold/ncacf/val_results.npz', val_ndcg=val_ndcg[1, :])
-
-    return
-
-
-def plot_val_ndcg_ncacf():
-
-    val_ndcg_warm = np.load('outputs/warm/ncacf/val_results.npz')['val_ndcg'][:, :-1, :]
-    val_ndcg_cold = np.load('outputs/cold/ncacf/val_results.npz')['val_ndcg'][:, :-1, :]
-
-    plt.figure(0)
-    plt.subplot(2, 2, 1)
-    plt.title('Warm-start')
-    plt.plot(val_ndcg_warm[0, :, :].T)
-    plt.ylabel('NDCG (%)')
-    plt.legend(['Relaxed', 'Strict'])
-    plt.subplot(2, 2, 2)
-    plt.title('Cold-start')
-    plt.plot(val_ndcg_cold[0, :, :].T)
-    plt.subplot(2, 2, 3)
-    plt.plot(val_ndcg_warm[1, :, :].T)
-    plt.ylabel('NDCG (%)')
-    plt.xlabel('Q')
-    plt.subplot(2, 2, 4)
-    plt.plot(val_ndcg_cold[1, :, :].T)
-    plt.xlabel('Q')
 
     return
 

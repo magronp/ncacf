@@ -4,7 +4,7 @@ __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
 from helpers.utils import create_folder, get_optimal_val_model_lW_lH, get_optimal_val_model_lW
-from helpers.utils import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
+from helpers.plotters import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 from matplotlib import pyplot as plt
 import numpy as np
 import os

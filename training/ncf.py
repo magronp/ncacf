@@ -5,9 +5,9 @@ __docformat__ = 'reStructuredText'
 
 import numpy as np
 import torch
-from helpers.utils import create_folder, get_optimal_val_model_lW_lH
 import os
 import time
+from helpers.utils import create_folder, get_optimal_val_model_lW_lH
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
@@ -17,9 +17,7 @@ from helpers.utils import wpe_joint_ncf
 from helpers.eval import evaluate_uni
 from helpers.models import ModelNCF
 import copy
-import matplotlib
-matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
+from helpers.plotters import plot_val_ndcg_ncf
 
 
 def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult', rec_model=True):
@@ -159,24 +157,6 @@ def get_optimal_ncf(range_inter, range_nl_di):
 
     # Also record the overall validation scores (for plotting)
     np.savez('outputs/warm/ncf/val_results.npz', val_ndcg=val_ndcg)
-
-    return
-
-
-def plot_val_ndcg_ncf():
-
-    val_ndcg = np.load('outputs/warm/ncf/val_results.npz')['val_ndcg'][:, :-1]
-
-    plt.figure(0)
-    plt.subplot(2, 1, 1)
-    plt.plot(val_ndcg[0, :].T)
-    plt.ylabel('NDCG (%)')
-    plt.title('Multiplication')
-    plt.subplot(2, 1, 2)
-    plt.plot(val_ndcg[1, :].T)
-    plt.ylabel('NDCG (%)')
-    plt.title('Concatenation')
-    plt.xlabel('Q')
 
     return
 

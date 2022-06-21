@@ -6,7 +6,7 @@ __docformat__ = 'reStructuredText'
 from helpers.eval import evaluate_uni
 from helpers.models import ModelMFuni
 from helpers.utils import create_folder, wpe_joint, get_optimal_val_model_lW_lH, get_optimal_val_model_lW
-from helpers.utils import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
+from helpers.plotters import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 import numpy as np
 import os
 import time
@@ -15,7 +15,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
-from helpers.data_feeder import load_tp_data, DatasetPlaycounts
+from helpers.data_feeder import DatasetPlaycounts
 import copy
 
 
