@@ -197,11 +197,11 @@ if __name__ == '__main__':
     print('Process on: {}'.format(torch.cuda.get_device_name(device)))
 
     # Set parameters
-    params = {'batch_size': 64, # 128
+    params = {'batch_size': 128,
               'n_embeddings': 128,
               'n_features_hidden': 1024,
               'n_features_in': 168,
-              'n_epochs': 1, #100
+              'n_epochs': 100,
               'lr': 1e-4,
               'device': device
               }
@@ -213,7 +213,7 @@ if __name__ == '__main__':
 
     # Define the hyperparameters over which performing a grid search
     range_lW, range_lH = [0.1], [0.1]
-    range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1] # [-1, 0, 1, 2, 3, 4, 5]
+    range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
 
     # Training with validation
     train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')

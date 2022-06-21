@@ -183,7 +183,7 @@ if __name__ == '__main__':
     # Define the hyperparameters over which performing a grid search
     #range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
     range_lW, range_lH,  = [0.1], [0.1]
-    range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4, 5]
+    range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
 
     # Training with validation
     train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir=data_dir)
