@@ -59,6 +59,7 @@ target/
 # VIM
 *.txt
 !*dummy.txt
+!*requirements.txt
 *.db
 *.arff
 *.swp
