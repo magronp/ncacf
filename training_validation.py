@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     # Define the hyperparameters over which performing a grid search
     range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-
+    ''' 
     # WMF and 2-stage approaches - training with validation and model selection
     train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
     get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
@@ -51,8 +51,9 @@ if __name__ == '__main__':
     check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
 
     # MF-Uni models - training with validation
+    '''
     range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
-    train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+    #train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
 
     # NCF baseline - training with validation (lambda, interaction model, and number of layers)
     params['n_epochs'] = 2 #100
