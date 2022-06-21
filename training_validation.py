@@ -26,7 +26,7 @@ if __name__ == '__main__':
     params = {'batch_size': 128,
               'n_embeddings': 128,
               'n_iter_wmf': 30,
-              'n_epochs': 150,
+              'n_epochs': 2, #150
               'lr': 1e-4,
               'n_features_hidden': 1024,
               'n_features_in': 168,
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
 
     # WMF and 2-stage approaches - training with validation and model selection
-    train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+    #train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
     get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
     get_optimal_wmf(params, range_lW, range_lH)
 
@@ -55,6 +55,7 @@ if __name__ == '__main__':
     train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
 
     # NCF baseline - training with validation (lambda, interaction model, and number of layers)
+    params['n_epochs'] = 2 #100
     range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4, 5]
     train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir=data_dir)
 

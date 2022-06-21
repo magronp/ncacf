@@ -187,6 +187,9 @@ if __name__ == '__main__':
 
     # Training with validation
     train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir=data_dir)
+    get_optimal_ncf(range_inter, range_nl_di)
+
+    # Plot validation results
     plot_val_ndcg_ncf()
 
 # EOF
