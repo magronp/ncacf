@@ -5,6 +5,7 @@ __docformat__ = 'reStructuredText'
 
 import numpy as np
 import torch
+import sys
 from training.twostages import train_val_wmf_2stages, get_optimal_2stages, get_optimal_wmf
 from training.mf_hybrid import train_val_mf_hybrid, check_NGD_mf_hybrid
 from training.mf_uni import train_val_mf_uni
@@ -14,10 +15,6 @@ from training.ncacf import train_val_ncacf, get_optimal_ncacf
 
 if __name__ == '__main__':
 
-    # Set random seed for reproducibility
-    np.random.seed(1234)
-    torch.manual_seed(1234)
-
     # Run on GPU (if it's available)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('Process on: {}'.format(device))
@@ -25,8 +22,6 @@ if __name__ == '__main__':
     # Set parameters
     params = {'batch_size': 128,
               'n_embeddings': 128,
-              'n_iter_wmf': 30,
-              'n_epochs': 2, #150
               'lr': 1e-4,
               'n_features_hidden': 1024,
               'n_features_in': 168,
@@ -37,34 +32,62 @@ if __name__ == '__main__':
     setting_list = ['warm', 'cold']
     variant_list = ['relaxed', 'strict']
 
-    # Define the hyperparameters over which performing a grid search
-    range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-    
-    # WMF and 2-stage approaches - training with validation and model selection
-    train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
-    get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
-    get_optimal_wmf(params, range_lW, range_lH)
+    # List of models to train/validate
+    model_list = sys.argv[1:]
+    #model_list = ['twostages', 'mf_hybrid', 'mf_uni', 'ncf', 'ncacf']
 
-    # MF-Hybrid models - training with validation, and check the impact of N_GD
-    train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
-    n_ep_it_list = [2, 5, 10]
-    check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
+    for model in model_list:
 
-    # MF-Uni models - training with validation
-    range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
-    train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+        # WMF and 2-stage approaches - training with validation and model selection
+        if model == 'twostages':
+            np.random.seed(1234)
+            torch.manual_seed(1234)
+            params['n_iter_wmf'] = 30
+            params['n_epochs'] = 150
+            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
+            get_optimal_wmf(params, range_lW, range_lH)
 
-    # Update some parameters (range of hyperparams, epochs, deep interaction parameters)
-    range_lW, range_lH, = [0.1], [0.1]
-    params['n_epochs'] = 100
-    range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
+        # MF-Hybrid models - training with validation, and check the impact of N_GD
+        elif model == 'mf_hybrid':
+            np.random.seed(1234)
+            torch.manual_seed(1234)
+            params['n_epochs'] = 150
+            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            n_ep_it_list = [2, 5, 10]
+            check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
 
-    # NCF baseline - training with validation (lambda, interaction model, and number of layers)
-    train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir=data_dir)
-    get_optimal_ncf(range_inter, range_nl_di)
+        # MF-Uni models - training with validation
+        elif model == 'mf_uni':
+            np.random.seed(1234)
+            torch.manual_seed(1234)
+            params['n_epochs'] = 150
+            range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
+            train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
 
-    # NCACF - training with validation (interaction model, number of layers, variant)
-    train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')
-    get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
+        # NCF baseline - training with validation (lambda, interaction model, and number of layers)
+        elif model == 'ncf':
+            np.random.seed(1234)
+            torch.manual_seed(1234)
+            range_lW, range_lH, = [0.1], [0.1]
+            params['n_epochs'] = 100
+            range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
+            train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+            get_optimal_ncf(range_inter, range_nl_di)
+
+        # NCACF - training with validation (interaction model, number of layers, variant)
+        elif model == 'ncacf':
+            np.random.seed(1234)
+            torch.manual_seed(1234)
+            range_lW, range_lH, = [0.1], [0.1]
+            params['n_epochs'] = 100
+            range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
+            train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+            get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
+
+        else:
+            print('Unknown model')
 
 # EOF
