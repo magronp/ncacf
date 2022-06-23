@@ -20,7 +20,11 @@ from helpers.eval import evaluate_mf_hybrid
 import copy
 
 
-def train_wmf(params, setting, rec_model=True):
+def train_wmf(params, setting, rec_model=True, seed=1234):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
@@ -53,7 +57,11 @@ def train_wmf(params, setting, rec_model=True):
     return W, H
 
 
-def train_2stages_relaxed(params, setting, rec_model=True):
+def train_2stages_relaxed(params, setting, rec_model=True, seed=1234):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # Path for the features and the pre-calculated WMF
     path_wmf = os.path.join(params['out_dir'], 'wmf.npz')
@@ -126,7 +134,11 @@ def train_2stages_relaxed(params, setting, rec_model=True):
     return model_opt
 
 
-def train_2stages_strict(params, setting, rec_model=True):
+def train_2stages_strict(params, setting, rec_model=True, seed=1234):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # Get the number of songs and users
     n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
@@ -310,10 +322,6 @@ def get_optimal_wmf(params, range_lW, range_lH):
 
 
 if __name__ == '__main__':
-
-    # Set random seed for reproducibility
-    np.random.seed(1234)
-    torch.manual_seed(1234)
 
     # Run on GPU (if it's available)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'

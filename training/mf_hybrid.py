@@ -21,7 +21,11 @@ from helpers.eval import evaluate_mf_hybrid, predict_attributes
 import copy
 
 
-def train_mf_hybrid_relaxed(params, setting, rec_model=True):
+def train_mf_hybrid_relaxed(params, setting, rec_model=True, seed=1234):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
@@ -124,7 +128,11 @@ def train_mf_hybrid_relaxed(params, setting, rec_model=True):
     return model_opt, W, H, time_opt
 
 
-def train_mf_hybrid_strict(params, setting, rec_model=True):
+def train_mf_hybrid_strict(params, setting, rec_model=True, seed=1234):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # Get the hyperparameter
     lW = params['lW']
@@ -321,10 +329,6 @@ def plot_val_mf_hybrid_epiter(setting, variant, n_epochs, n_ep_it_list):
 
 
 if __name__ == '__main__':
-
-    # Set random seed for reproducibility
-    np.random.seed(1234)
-    torch.manual_seed(1234)
 
     # Run on GPU (if it's available)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'

@@ -40,8 +40,6 @@ if __name__ == '__main__':
 
         # WMF and 2-stage approaches - training with validation and model selection
         if model == 'twostages':
-            np.random.seed(1234)
-            torch.manual_seed(1234)
             params['n_iter_wmf'] = 30
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
@@ -51,8 +49,6 @@ if __name__ == '__main__':
 
         # MF-Hybrid models - training with validation, and check the impact of N_GD
         elif model == 'mf_hybrid':
-            np.random.seed(1234)
-            torch.manual_seed(1234)
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
             train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
@@ -61,16 +57,12 @@ if __name__ == '__main__':
 
         # MF-Uni models - training with validation
         elif model == 'mf_uni':
-            np.random.seed(1234)
-            torch.manual_seed(1234)
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
             train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
 
         # NCF baseline - training with validation (lambda, interaction model, and number of layers)
         elif model == 'ncf':
-            np.random.seed(1234)
-            torch.manual_seed(1234)
             range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
             range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
@@ -79,8 +71,6 @@ if __name__ == '__main__':
 
         # NCACF - training with validation (interaction model, number of layers, variant)
         elif model == 'ncacf':
-            np.random.seed(1234)
-            torch.manual_seed(1234)
             range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
             range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]

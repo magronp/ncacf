@@ -19,7 +19,12 @@ import copy
 from helpers.plotters import plot_val_ndcg_ncacf
 
 
-def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', variant='relaxed', inter='mult', rec_model=True):
+def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', variant='relaxed', inter='mult',
+                rec_model=True, seed=1234):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
@@ -187,10 +192,6 @@ def get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di):
 
 
 if __name__ == '__main__':
-
-    # Set random seed for reproducibility
-    np.random.seed(1234)
-    torch.manual_seed(1234)
 
     # Run on GPU (if it's available)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
