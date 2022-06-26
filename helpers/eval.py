@@ -152,7 +152,7 @@ def evaluate_uni_warm(params, my_model, split='val'):
     # Predict the attributes and ratings
     # Define a data loader
     my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
-    my_dataloader_eval = DataLoader(my_dataset_eval, 1, shuffle=False, drop_last=False)
+    my_dataloader_eval = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
 
     # Compute the model output
     us_total = torch.arange(0, n_users, dtype=torch.long).to(params['device'])
