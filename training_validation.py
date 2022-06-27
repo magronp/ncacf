@@ -29,12 +29,12 @@ if __name__ == '__main__':
     data_dir = 'data/'
 
     # Define the settings (warm and cold start) and the variants (relaxed and strict)
-    setting_list = ['cold']
+    setting_list = ['warm', 'cold']
     variant_list = ['relaxed', 'strict']
 
     # List of models to train/validate
     model_list = sys.argv[1:]
-    #model_list = ['ncf']
+    #model_list = ['ncacf']
 
     for model in model_list:
 
@@ -65,18 +65,15 @@ if __name__ == '__main__':
         elif model == 'ncf':
             range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
-            #range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
-            range_inter, range_nl_di = ['conc'], [2, 3, 4]
-            train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
             range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
+            train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
             get_optimal_ncf(range_inter, range_nl_di)
 
         # NCACF - training with validation (interaction model, number of layers, variant)
         elif model == 'ncacf':
             range_lW, range_lH, = [0.1], [0.1]
-            params['n_epochs'] = 1
-            #range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
-            range_inter, range_nl_di = ['conc'], [-1, 4]
+            params['n_epochs'] = 100
+            range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
             train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
             get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
 

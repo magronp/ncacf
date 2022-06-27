@@ -137,7 +137,7 @@ class ModelNCACF(Module):
 
         self.n_users = n_users
         self.variant = variant
-
+        self.n_songs = n_songs
         # Embeddings
         self.user_emb = Embedding(n_users, n_embeddings)
         self.item_emb = Embedding(n_songs, n_embeddings)

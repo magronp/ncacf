@@ -21,7 +21,6 @@ from helpers.plotters import plot_val_ndcg_ncacf
 
 def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', variant='relaxed', inter='mult',
                 rec_model=True, seed=1234):
-
     # Set random seed for reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -33,7 +32,7 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
     n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
     n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
     if setting == 'cold':
-        n_songs_train = int(0.7 * n_songs_train)
+        n_songs_train = int(0.8 * 0.9 * n_songs_train)
 
     # Path for the TP training data, features and the WMF
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
@@ -44,11 +43,11 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
 
     # Get the playcount data and confidence
     train_data, _, _, conf = load_tp_data(path_tp_train, setting)
-    
+
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCACF(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
                           params['n_embeddings'], n_layers_di, variant, inter)
-    if not(path_pretrain is None):
+    if not (path_pretrain is None):
         my_model.load_state_dict(torch.load(path_pretrain + 'model.pt'), strict=False)
     my_model.requires_grad_(True)
     my_model.to(params['device'])
@@ -170,7 +169,7 @@ def get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di):
         for ii, inter in enumerate(range_inter):
             for inl, nl_di in enumerate(range_nl_di):
                 for iv, variant in enumerate(variant_list):
-                    path_current = 'outputs/' + setting + '/ncf/' + inter + '/' + str(nl_di) + '/' + variant + '/'
+                    path_current = 'outputs/' + setting + '/ncacf/' + inter + '/' + str(nl_di) + '/' + variant + '/'
                     val_ndcg[ise, ii, inl, iv] = np.max(np.load(path_current + 'training.npz')['val_ndcg'])
                     lambload = np.load(path_current + 'hyperparams.npz')
                     lambW[ise, ii, inl, iv], lambH[ise, ii, inl, iv] = lambload['lW'], lambload['lH']
@@ -181,12 +180,11 @@ def get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di):
         inter_opt, nl_di_opt, var_opt = range_inter[ind_opt[0]], range_nl_di[ind_opt[1]], variant_list[ind_opt[2]]
         lW_opt = lambW[ise, ind_opt[0], ind_opt[1], ind_opt[2]]
         lH_opt = lambH[ise, ind_opt[0], ind_opt[1], ind_opt[2]]
-        np.savez('outputs/' + setting + '/ncf/hyperparams.npz', lW=lW_opt, lH=lH_opt, inter=inter_opt, nl_di=nl_di_opt,
+        np.savez('outputs/' + setting + '/ncacf/hyperparams.npz', lW=lW_opt, lH=lH_opt, inter=inter_opt, nl_di=nl_di_opt,
                  variant=var_opt)
 
-    # Also record the overall validation scores (for plotting)
-    np.savez('outputs/warm/ncacf/val_results.npz', val_ndcg=val_ndcg[0, :])
-    np.savez('outputs/cold/ncacf/val_results.npz', val_ndcg=val_ndcg[1, :])
+        # Also record the overall validation scores (for plotting)
+        np.savez('outputs/' + setting + '/ncacf/val_results.npz', val_ndcg=val_ndcg[ise, :])
 
     return
 
