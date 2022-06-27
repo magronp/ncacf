@@ -21,6 +21,7 @@ from helpers.plotters import plot_val_ndcg_ncf
 
 
 def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult', rec_model=True, seed=1234):
+    torch.cuda.empty_cache()
 
     # Set random seed for reproducibility
     np.random.seed(seed)
@@ -85,7 +86,11 @@ def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult', rec_model
         loss_tot.append(loss_ep)
         time_ep = time.time() - start_time_ep
         time_tot += time_ep
+
+        torch.cuda.empty_cache()
         val_ndcg = evaluate_uni(params, my_model, setting='warm', split='val')
+        torch.cuda.empty_cache()
+
         val_ndcg_tot.append(val_ndcg)
         print('\nLoss: {l:6.6f} | Time: {t:5.3f} | NDCG: {n:5.3f}'.format(l=loss_ep, t=time_ep, n=val_ndcg),
               flush=True)
