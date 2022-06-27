@@ -29,7 +29,7 @@ if __name__ == '__main__':
     data_dir = 'data/'
 
     # Define the settings (warm and cold start) and the variants (relaxed and strict)
-    setting_list = ['warm', 'cold']
+    setting_list = ['cold']
     variant_list = ['relaxed', 'strict']
 
     # List of models to train/validate
