@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     # List of models to train/validate
     model_list = sys.argv[1:]
-    #model_list = ['twostages', 'mf_hybrid', 'mf_uni', 'ncf', 'ncacf']
+    #model_list = ['ncf']
 
     for model in model_list:
 
