@@ -65,7 +65,7 @@ if __name__ == '__main__':
             range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
             range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
-            #train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+            train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
             get_optimal_ncf(range_inter, range_nl_di)
 
         # NCACF - training with validation (interaction model, number of layers, variant)
