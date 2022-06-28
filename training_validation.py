@@ -3,7 +3,6 @@
 __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
-import numpy as np
 import torch
 import sys
 from training.twostages import train_val_wmf_2stages, get_optimal_2stages, get_optimal_wmf
