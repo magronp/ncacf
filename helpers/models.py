@@ -180,12 +180,12 @@ class ModelNCACF(Module):
         if all(i == -1):
             h = h_con
         else:
-            # Distinct between strict, relaxed or 'sum' model
+            # Distinct between strict, relaxed
             if self.variant == 'strict':
                 h = h_con
             else:
                 h = self.item_emb(i)
-
+        print(h - h_con)
         # Interaction model
         if self.inter == 'conc':
             emb = torch.cat((w.unsqueeze(1).expand(*[-1, h.shape[0], -1]),
