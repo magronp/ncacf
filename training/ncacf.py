@@ -24,7 +24,7 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
     # Set random seed for reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)
-
+    print(variant)
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
 
