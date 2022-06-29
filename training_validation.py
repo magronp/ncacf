@@ -78,11 +78,22 @@ if __name__ == '__main__':
         elif model == 'ncacf':
             params['n_epochs'] = 100
             range_lW, range_lH, = [0.1], [0.1]
-            range_nl_di = [-1, 0, 1, 2, 3, 4]
+
+            setting_list = ['warm', 'cold']
+            variant_list = ['relaxed']
+            range_inter = ['mult']
+            range_nl_di = [5]
+            train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
 
             setting_list = ['warm']
             variant_list = ['relaxed']
             range_inter = ['conc']
+            range_nl_di = [-1, 0, 1, 2, 3, 4, 5]
+            train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+
+            setting_list = ['warm']
+            variant_list = ['strict']
+            range_inter = ['mult']
             train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
 
             #variant_list = ['relaxed']
