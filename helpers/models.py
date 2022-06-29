@@ -44,7 +44,7 @@ class ModelMFuni(Module):
         # embedding layers and initialization (uniform)
         self.user_emb = Embedding(n_users, n_embeddings)
         self.user_emb.weight.data.normal_(0, 0.01)
-        if self.mod == 'relaxed':
+        if self.variant == 'relaxed':
             self.item_emb = Embedding(n_songs, n_embeddings)
             self.item_emb.weight.data.normal_(0, 0.01)
 
