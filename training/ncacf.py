@@ -47,6 +47,7 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCACF(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
                           params['n_embeddings'], n_layers_di, variant, inter)
+    print(my_model.variant)
     if not (path_pretrain is None):
         my_model.load_state_dict(torch.load(path_pretrain + 'model.pt'), strict=False)
     my_model.requires_grad_(True)
