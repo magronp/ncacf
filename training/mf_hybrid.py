@@ -246,7 +246,8 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
     # In this case, set N_gd at 1
     params['n_ep_it'] = 1
     # Check if this is a validation scenario: if more than 1 value is given for lW / lH
-    val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
+    #val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
+    val_b = True
 
     for setting in setting_list:
         # Define the dataset and output path depending on if it's in/out task
