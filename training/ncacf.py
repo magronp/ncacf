@@ -24,7 +24,7 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
     # Set random seed for reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)
-    print(variant)
+
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
 
@@ -80,7 +80,6 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
             it = data[2].to(params['device'])
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
-            print(h - h_con)
             # Back-propagation
             loss = wpe_joint(counts_tot, pred_rat, w, h, h_con, lW, lH)
             loss.backward()
