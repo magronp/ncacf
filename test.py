@@ -17,18 +17,40 @@ import sys
 
 
 def train_test_wmf(params, k_split, data_dir='data/'):
+
+    # Define the data directory
     params['data_dir'] = data_dir + 'warm' + '/split' + str(k_split) + '/'
-    lamda_opt = np.load('outputs/warm/WMF/hyperparams.npz')
-    params['lW'], params['lH'] = lamda_opt['lW'], lamda_opt['lH']
+
+    # Hyperparameters
+    path_hyperparams = 'outputs/warm/WMF/hyperparams.npz'
+    file_exists = exists(path_hyperparams)
+    if file_exists:
+        lamda_opt = np.load('outputs/warm/WMF/hyperparams.npz')
+        params['lW'], params['lH'] = lamda_opt['lW'], lamda_opt['lH']
+    else:
+        params['lW'], params['lH'] = 100, 100
+
+    # Train and test
     W, H = train_wmf(params, setting='warm', rec_model=False)
     test_ndcg = evaluate_mf_hybrid(params, W, H, None, setting='warm', variant='relaxed', split='test')
     return test_ndcg
 
 
 def train_test_2stages(params, setting, variant, k_split, data_dir='data/'):
+
+    # Define the data directory
     params['data_dir'] = data_dir + setting + '/split' + str(k_split) + '/'
-    lamda_opt = np.load('outputs/' + setting + '/2stages/' + variant + '/hyperparams.npz')
-    params['lW'], params['lH'] = lamda_opt['lW'], lamda_opt['lH']
+
+    # Hyperparameters
+    path_hyperparams = 'outputs/' + setting + '/2stages/' + variant + '/hyperparams.npz'
+    file_exists = exists(path_hyperparams)
+    if file_exists:
+        lamda_opt = np.load(path_hyperparams)
+        params['lW'], params['lH'] = lamda_opt['lW'], lamda_opt['lH']
+    else:
+        params['lW'], params['lH'] = 100, 100
+
+    # Train and test
     params['out_dir'] = 'outputs/temp/'
     W, H = train_wmf(params, setting=setting)
     model_opt = train_2stages(params, variant=variant, setting=setting, rec_model=False)
@@ -58,10 +80,22 @@ def train_test_mfuni(params, setting, variant, k_split, data_dir='data/'):
 
 
 def train_test_ncf(params, k_split, data_dir='data/'):
+
+    # Define the data directory
     params['data_dir'] = data_dir + 'warm' + '/split' + str(k_split) + '/'
-    hyper_opt = np.load('outputs/warm/ncf//hyperparams.npz')
-    params['lW'], params['lH'] = float(hyper_opt['lW']), float(hyper_opt['lH'])
-    ni_dl, inter = int(hyper_opt['nl_di']), hyper_opt['inter']
+
+    # Hyperparameters
+    path_hyperparams = 'outputs/warm/ncacf//hyperparams.npz'
+    file_exists = exists(path_hyperparams)
+    if file_exists:
+        hyper_opt = np.load(path_hyperparams)
+        params['lW'], params['lH'] = float(hyper_opt['lW']), float(hyper_opt['lH'])
+        ni_dl, inter = int(hyper_opt['nl_di']), hyper_opt['inter']
+    else:
+        params['lW'], params['lH'] = 0.1, 0.1
+        ni_dl, inter = 2, 'mult'
+
+    # Train and test
     params['out_dir'] = 'outputs/temp/'
     # first pretrain a shallow NCF model (no deep interaction layer, no nonlinear activation)
     train_ncf(params, path_pretrain=None, n_layers_di=-1, inter=inter, rec_model=True)
@@ -72,10 +106,22 @@ def train_test_ncf(params, k_split, data_dir='data/'):
 
 
 def train_test_ncacf(params, setting, k_split, data_dir='data/'):
+
+    # Define the data directory
     params['data_dir'] = data_dir + setting + '/split' + str(k_split) + '/'
-    hyper_opt = np.load('outputs/' + setting + '/ncacf//hyperparams.npz')
-    params['lW'], params['lH'] = float(hyper_opt['lW']), float(hyper_opt['lH'])
-    ni_dl, inter, variant = int(hyper_opt['nl_di']), hyper_opt['inter'], hyper_opt['variant']
+
+    # Hyperparameters
+    path_hyperparams = 'outputs/' + setting + '/ncacf//hyperparams.npz'
+    file_exists = exists(path_hyperparams)
+    if file_exists:
+        hyper_opt = np.load(path_hyperparams)
+        params['lW'], params['lH'] = float(hyper_opt['lW']), float(hyper_opt['lH'])
+        ni_dl, inter, variant = int(hyper_opt['nl_di']), hyper_opt['inter'], hyper_opt['variant']
+    else:
+        params['lW'], params['lH'] = 0.1, 0.1
+        ni_dl, inter, variant = 2, 'mult', 'relaxed'
+
+    # Train and test
     params['out_dir'] = 'outputs/temp/'
     # first pretrain a shallow NCACF model (no deep interaction layer, no nonlinear activation)
     train_ncacf(params, path_pretrain=None, n_layers_di=-1, setting=setting, variant=variant, inter=inter,

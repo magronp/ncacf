@@ -27,10 +27,6 @@ if __name__ == '__main__':
               'device': device}
     data_dir = 'data/'
 
-    # Define the settings (warm and cold start) and the variants (relaxed and strict)
-    setting_list = ['warm', 'cold']
-    variant_list = ['relaxed', 'strict']
-
     # List of models to train/validate
     model_list = sys.argv[1:]
     #model_list = ['ncacf']
@@ -39,23 +35,38 @@ if __name__ == '__main__':
 
         # WMF and 2-stage approaches - training with validation and model selection
         if model == 'twostages':
+            # Define the settings (warm and cold start) and the variants (relaxed and strict)
+            #setting_list = ['warm', 'cold']
+            #variant_list = ['relaxed', 'strict']
+            setting_list = ['warm']
+            variant_list = ['relaxed', 'strict']
             params['n_iter_wmf'] = 30
             params['n_epochs'] = 150
-            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            #range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            range_lW, range_lH = [100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
             train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
-            get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
-            get_optimal_wmf(params, range_lW, range_lH)
+            #get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
+            #get_optimal_wmf(params, range_lW, range_lH)
 
         # MF-Hybrid models - training with validation, and check the impact of N_GD
         elif model == 'mf_hybrid':
+            # Define the settings (warm and cold start) and the variants (relaxed and strict)
+            #setting_list = ['warm', 'cold']
+            #variant_list = ['relaxed', 'strict']
+            setting_list = ['warm']
+            variant_list = ['strict']
             params['n_epochs'] = 150
-            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            #range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            range_lW, range_lH = [1000], [0.001, 0.01, 0.1, 1, 10, 100]
             train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
             n_ep_it_list = [2, 5, 10]
-            check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
+            #check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
 
         # MF-Uni models - training with validation
         elif model == 'mf_uni':
+            # Define the settings (warm and cold start) and the variants (relaxed and strict)
+            setting_list = ['warm', 'cold']
+            variant_list = ['relaxed', 'strict']
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
             train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
@@ -70,9 +81,15 @@ if __name__ == '__main__':
 
         # NCACF - training with validation (interaction model, number of layers, variant)
         elif model == 'ncacf':
+            # Define the settings (warm and cold start) and the variants (relaxed and strict)
+            #setting_list = ['warm', 'cold']
+            #variant_list = ['relaxed', 'strict']
+            setting_list = ['warm']
+            variant_list = ['relaxed', 'strict']
             range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
-            range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
+            #range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
+            range_inter, range_nl_di = ['conc'], [2, 3, 4]
             train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
             get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
 
