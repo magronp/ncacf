@@ -76,13 +76,19 @@ if __name__ == '__main__':
 
         # NCACF - training with validation (interaction model, number of layers, variant)
         elif model == 'ncacf':
-            setting_list = ['cold']
-            variant_list = ['strict']
-            range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
-            range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
+            range_lW, range_lH, = [0.1], [0.1]
+            range_nl_di = [-1, 0, 1, 2, 3, 4]
+
+            setting_list = ['warm']
+            variant_list = ['relaxed']
+            range_inter = ['conc']
             train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
-            get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
+
+            #variant_list = ['relaxed']
+            #range_inter = ['conc']
+            #train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+            #get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
 
         else:
             print('Unknown model')

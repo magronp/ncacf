@@ -47,7 +47,7 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCACF(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
                           params['n_embeddings'], n_layers_di=n_layers_di, variant=variant, inter=inter)
-    print(my_model.variant, my_model.inter)
+
     if not (path_pretrain is None):
         my_model.load_state_dict(torch.load(path_pretrain + 'model.pt'), strict=False)
     my_model.requires_grad_(True)
@@ -81,7 +81,6 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
             it = data[2].to(params['device'])
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
-            print(h-h_con)
             # Back-propagation
             loss = wpe_joint(counts_tot, pred_rat, w, h, h_con, lW, lH)
             loss.backward()
@@ -105,9 +104,9 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
             model_opt = copy.deepcopy(my_model)
 
     # Record the training log
-    #np.savez(os.path.join(params['out_dir'], 'training.npz'), loss=loss_tot, time=time_opt, val_ndcg=val_ndcg_tot)
-    #if rec_model:
-    #    torch.save(model_opt.state_dict(), os.path.join(params['out_dir'], 'model.pt'))
+    np.savez(os.path.join(params['out_dir'], 'training.npz'), loss=loss_tot, time=time_opt, val_ndcg=val_ndcg_tot)
+    if rec_model:
+        torch.save(model_opt.state_dict(), os.path.join(params['out_dir'], 'model.pt'))
 
     return model_opt
 
@@ -217,7 +216,7 @@ if __name__ == '__main__':
     range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
 
     # Training with validation
-    train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/')
+    train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir=data_dir)
     get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
 
     # Plot validation results
