@@ -50,13 +50,13 @@ if __name__ == '__main__':
 
         # MF-Hybrid models - training with validation, and check the impact of N_GD
         elif model == 'mf_hybrid':
-            setting_list = ['warm', 'cold']
+            setting_list = ['warm']
             variant_list = ['relaxed', 'strict']
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-            train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            #train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
             n_ep_it_list = [2, 5, 10]
-            #check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
+            check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
 
         # MF-Uni models - training with validation
         elif model == 'mf_uni':
