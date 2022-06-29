@@ -39,12 +39,11 @@ if __name__ == '__main__':
 
         # WMF and 2-stage approaches - training with validation and model selection
         if model == 'twostages':
-            setting_list = ['warm']
+            setting_list = ['cold']
             variant_list = ['relaxed', 'strict']
             params['n_iter_wmf'] = 30
             params['n_epochs'] = 150
-            #range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-            range_lW, range_lH = [1000], [1, 10, 100]
+            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
             train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
             #get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
             #get_optimal_wmf(params, range_lW, range_lH)
@@ -82,7 +81,6 @@ if __name__ == '__main__':
             range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
             range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
-            #range_inter, range_nl_di = ['conc'], [4]
             train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
             get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
 

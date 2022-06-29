@@ -246,8 +246,7 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
     # In this case, set N_gd at 1
     params['n_ep_it'] = 1
     # Check if this is a validation scenario: if more than 1 value is given for lW / lH
-    #val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
-    val_b = True
+    val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
 
     for setting in setting_list:
         # Define the dataset and output path depending on if it's in/out task
@@ -264,7 +263,7 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
                             params['lW'], params['lH'] = lW, lH
                             params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
                             create_folder(params['out_dir'])
-                            train_mf_hybrid(params, variant=variant, setting=setting)
+                            #train_mf_hybrid(params, variant=variant, setting=setting)
                     get_optimal_val_model_lW_lH(path_current + 'relaxed/', range_lW, range_lH, params['n_epochs'])
                 else:
                     for lW in range_lW:
@@ -273,14 +272,14 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
                         params['lW'], params['lH'] = lW, 0.
                         params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
                         create_folder(params['out_dir'])
-                        train_mf_hybrid(params, variant='strict', setting=setting)
+                        #train_mf_hybrid(params, variant='strict', setting=setting)
                     get_optimal_val_model_lW(path_current + 'strict/', range_lW, params['n_epochs'])
             else:
                 print('Task: ' + setting + ' -  Variant: ' + variant)
                 params['lW'], params['lH'] = range_lW[0], range_lH[0]
                 params['out_dir'] = path_current + variant + '/'
                 create_folder(params['out_dir'])
-                train_mf_hybrid(params, variant=variant, setting=setting)
+                #train_mf_hybrid(params, variant=variant, setting=setting)
                 np.savez(path_current + 'hyperparams.npz', lW=params['lW'], lH=params['lH'])
 
     return
