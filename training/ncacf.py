@@ -46,8 +46,8 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCACF(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
-                          params['n_embeddings'], n_layers_di, variant, inter)
-    print(my_model.variant)
+                          params['n_embeddings'], n_layers_di=n_layers_di, variant=variant, inter=inter)
+    print(my_model.variant, my_model.inter)
     if not (path_pretrain is None):
         my_model.load_state_dict(torch.load(path_pretrain + 'model.pt'), strict=False)
     my_model.requires_grad_(True)
@@ -81,6 +81,7 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
             it = data[2].to(params['device'])
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
+            print(h-h_con)
             # Back-propagation
             loss = wpe_joint(counts_tot, pred_rat, w, h, h_con, lW, lH)
             loss.backward()

@@ -29,12 +29,12 @@ class ModelAttributes(Module):
 
 class ModelMFuni(Module):
 
-    def __init__(self, n_users, n_songs, n_embeddings, n_features_in, n_features_hidden, mod):
+    def __init__(self, n_users, n_songs, n_embeddings, n_features_in, n_features_hidden, variant):
 
         super(ModelMFuni, self).__init__()
 
         # Define if the model variant is strict or relaxed
-        self.mod = mod
+        self.variant = variant
 
         # Item content extractor
         self.fnn_in = Sequential(Linear(n_features_in, n_features_hidden, bias=True), ReLU())
@@ -63,7 +63,7 @@ class ModelMFuni(Module):
             h = h_con
         else:
             # Distinct between strict, or relaxed or model
-            if self.mod == 'strict':
+            if self.variant == 'strict':
                 h = h_con
             else:
                 h = self.item_emb(i)
@@ -133,7 +133,8 @@ class ModelNCF(Module):
 
 class ModelNCACF(Module):
 
-    def __init__(self, n_users, n_songs, n_features_in, n_features_hidden, n_embeddings, n_layers_di=2, inter='mult', variant='relaxed'):
+    def __init__(self, n_users, n_songs, n_features_in, n_features_hidden, n_embeddings, n_layers_di=2,
+                 variant='relaxed', inter='mult'):
         super(ModelNCACF, self).__init__()
 
         self.n_users = n_users
