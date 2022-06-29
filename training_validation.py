@@ -28,8 +28,8 @@ if __name__ == '__main__':
     data_dir = 'data/'
 
     # List of models to train/validate
-    #model_list = sys.argv[1:]
-    model_list = ['mf_uni']
+    model_list = sys.argv[1:]
+    #model_list = ['mf_uni']
 
     # Define the settings (warm and cold start) and the variants (relaxed and strict)
     setting_list = ['warm', 'cold']
