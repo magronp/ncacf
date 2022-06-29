@@ -77,7 +77,7 @@ if __name__ == '__main__':
         # NCACF - training with validation (interaction model, number of layers, variant)
         elif model == 'ncacf':
             setting_list = ['cold']
-            variant_list = ['relaxed', 'strict']
+            variant_list = ['strict']
             range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
             range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
