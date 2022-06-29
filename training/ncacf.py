@@ -105,8 +105,8 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
 
     # Record the training log
     #np.savez(os.path.join(params['out_dir'], 'training.npz'), loss=loss_tot, time=time_opt, val_ndcg=val_ndcg_tot)
-    if rec_model:
-        #torch.save(model_opt.state_dict(), os.path.join(params['out_dir'], 'model.pt'))
+    #if rec_model:
+    #    torch.save(model_opt.state_dict(), os.path.join(params['out_dir'], 'model.pt'))
 
     return model_opt
 
