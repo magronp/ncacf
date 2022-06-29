@@ -80,14 +80,13 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
             it = data[2].to(params['device'])
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
+            print(h - h_con)
             # Back-propagation
             loss = wpe_joint(counts_tot, pred_rat, w, h, h_con, lW, lH)
             loss.backward()
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
             my_optimizer.step()
             epoch_losses.append(loss.item())
-
-        print(h - h_con)
         # Overall stats for one epoch
         loss_ep = np.mean(epoch_losses)
         loss_tot.append(loss_ep)
