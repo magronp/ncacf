@@ -70,6 +70,7 @@ class ModelMFuni(Module):
 
         # Interaction model
         pred_rat = torch.matmul(h, torch.transpose(w, 0, 1))
+        pred_rat = torch.transpose(pred_rat, 1, 0)
 
         return pred_rat, w, h, h_con
 

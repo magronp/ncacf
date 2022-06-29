@@ -71,7 +71,7 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
             my_optimizer.zero_grad()
             # Load the user and item indices and account for negative samples
             x = data[0].to(params['device'])
-            count_i = data[1].to(params['device'])
+            count_i = torch.transpose(data[1], 1, 0).to(params['device'])
             it = data[2].to(params['device'])
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
