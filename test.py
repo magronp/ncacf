@@ -105,7 +105,7 @@ def train_test_mfuni(params, setting, variant, k_split, data_dir='data/'):
         params['lW'], params['lH'] = float(lamda_opt['lW']), float(lamda_opt['lH'])
     else:
         if setting == 'warm' and variant == 'relaxed':
-            params['lW'], params['lH'] = 0, 0
+            params['lW'], params['lH'] = 0.1, 1
         elif setting == 'warm' and variant == 'strict':
             params['lW'], params['lH'] = 0.1, 0
         elif setting == 'cold' and variant == 'relaxed':
