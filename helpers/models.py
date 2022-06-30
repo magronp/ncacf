@@ -184,7 +184,6 @@ class ModelNCACF(Module):
             # Distinct between strict, relaxed
             if self.variant == 'strict':
                 h = h_con
-                print(h - h_con)
             else:
                 h = self.item_emb(i)
 
