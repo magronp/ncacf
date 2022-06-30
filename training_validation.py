@@ -62,8 +62,8 @@ if __name__ == '__main__':
         elif model == 'mf_uni':
             setting_list = ['warm']
             params['n_epochs'] = 150
-            variant_list = ['relaxed']
-            range_lW, range_lH = [10], [1, 10]
+            variant_list = ['relaxed', 'strict']
+            range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
             train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
 
         # NCF baseline - training with validation (lambda, interaction model, and number of layers)
