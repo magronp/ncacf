@@ -104,9 +104,11 @@ if __name__ == '__main__':
 
             setting_list = ['warm']
             variant_list = ['relaxed']
-            range_inter = ['mult', 'conc']
+            range_inter = ['mult']
             range_lW, range_lH, = [0.1], [1]
             train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+
+            # reste conc à lancer
 
         else:
             print('Unknown model')
