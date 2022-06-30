@@ -80,10 +80,16 @@ if __name__ == '__main__':
             range_nl_di = [-1, 0, 1, 2, 3, 4, 5]
             range_inter = ['mult', 'conc']
 
+            #setting_list = ['cold']
+            #variant_list = ['relaxed']
+            #range_lW, range_lH, = [0.1], [1]
+            #train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+
             setting_list = ['cold']
-            variant_list = ['relaxed']
-            range_lW, range_lH, = [0.1], [1]
+            variant_list = ['strict']
+            range_lW, range_lH, = [1], [0]
             train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+
         else:
             print('Unknown model')
 
