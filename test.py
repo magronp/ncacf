@@ -133,111 +133,113 @@ def train_test_ncacf(params, setting, k_split, data_dir='data/'):
     return test_ndcg
 
 
-# Run on GPU (if it's available)
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print('Process on: {}'.format(device))
-create_folder('outputs/temp/')
+if __name__ == '__main__':
 
-# Set parameters
-params = {'batch_size': 128,
-          'n_embeddings': 128,
-          'n_iter_wmf': 30,
-          'n_epochs': 150,
-          'lr': 1e-4,
-          'n_features_hidden': 1024,
-          'n_features_in': 168,
-          'device': device}
-data_dir = 'data/'
+    # Run on GPU (if it's available)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print('Process on: {}'.format(device))
+    create_folder('outputs/temp/')
 
-# Create the dictionaries for storing the results
-path_out = 'outputs/test_results.npz'
-file_exists = exists(path_out)
-n_splits = 10
+    # Set parameters
+    params = {'batch_size': 128,
+              'n_embeddings': 128,
+              'n_iter_wmf': 30,
+              'n_epochs': 150,
+              'lr': 1e-4,
+              'n_features_hidden': 1024,
+              'n_features_in': 168,
+              'device': device}
+    data_dir = 'data/'
 
-if not(file_exists):
-    ndcg_warm = {'wmf': np.zeros(n_splits),
-                 'dcb': np.zeros(n_splits),
-                 'cdl': np.zeros(n_splits),
-                 'dcue': np.zeros(n_splits),
-                 'cccfnet': np.zeros(n_splits),
-                 'ncf': np.zeros(n_splits),
-                 'ncacf': np.zeros(n_splits)
-                 }
-    ndcg_cold = {'dcb': np.zeros(n_splits),
-                 'cdl': np.zeros(n_splits),
-                 'dcue': np.zeros(n_splits),
-                 'cccfnet': np.zeros(n_splits),
-                 'ncacf': np.zeros(n_splits)
-                 }
-    np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+    # Create the dictionaries for storing the results
+    path_out = 'outputs/test_results.npz'
+    file_exists = exists(path_out)
+    n_splits = 10
 
-k_split = 0
-
-# List of baselines and methods to test
-model_list = sys.argv[1:]
-testmodel_list = ['wmf', 'dcb', 'cdl', 'dcue', 'cccfnet', 'ncf', 'ncacf']
-
-for model in testmodel_list:
-
-    # WMF - only in the warm-start setting
-    if model == 'wmf':
-        params['n_epochs'] = 150
-        testndcg = train_test_wmf(params, k_split, data_dir)
-        ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
-        ndcg_warm['wmf'][k_split] = testndcg
+    if not(file_exists):
+        ndcg_warm = {'wmf': np.zeros(n_splits),
+                     'dcb': np.zeros(n_splits),
+                     'cdl': np.zeros(n_splits),
+                     'dcue': np.zeros(n_splits),
+                     'cccfnet': np.zeros(n_splits),
+                     'ncf': np.zeros(n_splits),
+                     'ncacf': np.zeros(n_splits)
+                     }
+        ndcg_cold = {'dcb': np.zeros(n_splits),
+                     'cdl': np.zeros(n_splits),
+                     'dcue': np.zeros(n_splits),
+                     'cccfnet': np.zeros(n_splits),
+                     'ncacf': np.zeros(n_splits)
+                     }
         np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
 
-    # DCB (corresponds to the '2 stage'-approach) - warm  (strict variant) and cold (relaxed variant)
-    elif model == 'dcb':
-        params['n_epochs'] = 150
-        testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
-        testndcg_c = train_test_2stages(params, 'cold', 'relaxed', k_split, data_dir)
-        ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
-        ndcg_warm['dcb'][k_split], ndcg_cold['dcb'][k_split] = testndcg_w, testndcg_c
-        np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+    k_split = 0
 
-    # CDL - correspond to MF-Hybrid in the relaxed variant
-    elif model == 'cdl':
-        params['n_epochs'] = 150
-        testndcg_w = train_test_mfhybrid(params, 'warm', 'relaxed', k_split, data_dir)
-        testndcg_c = train_test_mfhybrid(params, 'cold', 'relaxed', k_split, data_dir)
-        ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
-        ndcg_warm['cdl'][k_split], ndcg_cold['cdl'][k_split] = testndcg_w, testndcg_c
-        np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+    # List of baselines and methods to test
+    model_list = sys.argv[1:]
+    testmodel_list = ['wmf', 'dcb', 'cdl', 'dcue', 'cccfnet', 'ncf', 'ncacf']
 
-    # DCUE - correponds to MF-Uni in the strict variant
-    elif model == 'dcue':
-        params['n_epochs'] = 150
-        testndcg_w = train_test_mfuni(params, 'warm', 'strict', k_split, data_dir)
-        testndcg_c = train_test_mfuni(params, 'cold', 'strict', k_split, data_dir)
-        ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
-        ndcg_warm['dcue'][k_split], ndcg_cold['dcue'][k_split] = testndcg_w, testndcg_c
-        np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+    for model in testmodel_list:
 
-    # CCCFnet - corresponds to MF-Uni in the relaxed variant
-    elif model == 'cccfnet':
-        params['n_epochs'] = 150
-        testndcg_w = train_test_mfuni(params, 'warm', 'relaxed', k_split, data_dir)
-        testndcg_c = train_test_mfuni(params, 'cold', 'relaxed', k_split, data_dir)
-        ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
-        ndcg_warm['cccfnet'][k_split], ndcg_cold['cccfnet'][k_split] = testndcg_w, testndcg_c
-        np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+        # WMF - only in the warm-start setting
+        if model == 'wmf':
+            params['n_epochs'] = 150
+            testndcg = train_test_wmf(params, k_split, data_dir)
+            ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
+            ndcg_warm['wmf'][k_split] = testndcg
+            np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
 
-    # NCF (only 1 variant and for the warm-start scenario)
-    elif model == 'ncf':
-        params['n_epochs'] = 100
-        testndcg_w = train_test_ncf(params, k_split, data_dir=data_dir)
-        ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
-        ndcg_warm['ncf'][k_split] = testndcg_w
-        np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+        # DCB (corresponds to the '2 stage'-approach) - warm  (strict variant) and cold (relaxed variant)
+        elif model == 'dcb':
+            params['n_epochs'] = 150
+            testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
+            testndcg_c = train_test_2stages(params, 'cold', 'relaxed', k_split, data_dir)
+            ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
+            ndcg_warm['dcb'][k_split], ndcg_cold['dcb'][k_split] = testndcg_w, testndcg_c
+            np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
 
-    # NCACF (get the optimal variant in the warm- and cold-start scenarios)
-    elif model == 'ncf':
-        params['n_epochs'] = 100
-        testndcg_w = train_test_ncacf(params, 'warm', k_split, data_dir=data_dir)
-        testndcg_c = train_test_ncacf(params, 'cold', k_split, data_dir=data_dir)
-        ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
-        ndcg_warm['ncacf'][k_split], ndcg_cold['ncacf'][k_split] = testndcg_w, testndcg_c
-        np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+        # CDL - correspond to MF-Hybrid in the relaxed variant
+        elif model == 'cdl':
+            params['n_epochs'] = 150
+            testndcg_w = train_test_mfhybrid(params, 'warm', 'relaxed', k_split, data_dir)
+            testndcg_c = train_test_mfhybrid(params, 'cold', 'relaxed', k_split, data_dir)
+            ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
+            ndcg_warm['cdl'][k_split], ndcg_cold['cdl'][k_split] = testndcg_w, testndcg_c
+            np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+
+        # DCUE - correponds to MF-Uni in the strict variant
+        elif model == 'dcue':
+            params['n_epochs'] = 150
+            testndcg_w = train_test_mfuni(params, 'warm', 'strict', k_split, data_dir)
+            testndcg_c = train_test_mfuni(params, 'cold', 'strict', k_split, data_dir)
+            ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
+            ndcg_warm['dcue'][k_split], ndcg_cold['dcue'][k_split] = testndcg_w, testndcg_c
+            np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+
+        # CCCFnet - corresponds to MF-Uni in the relaxed variant
+        elif model == 'cccfnet':
+            params['n_epochs'] = 150
+            testndcg_w = train_test_mfuni(params, 'warm', 'relaxed', k_split, data_dir)
+            testndcg_c = train_test_mfuni(params, 'cold', 'relaxed', k_split, data_dir)
+            ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
+            ndcg_warm['cccfnet'][k_split], ndcg_cold['cccfnet'][k_split] = testndcg_w, testndcg_c
+            np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+
+        # NCF (only 1 variant and for the warm-start scenario)
+        elif model == 'ncf':
+            params['n_epochs'] = 100
+            testndcg_w = train_test_ncf(params, k_split, data_dir=data_dir)
+            ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
+            ndcg_warm['ncf'][k_split] = testndcg_w
+            np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+
+        # NCACF (get the optimal variant in the warm- and cold-start scenarios)
+        elif model == 'ncf':
+            params['n_epochs'] = 100
+            testndcg_w = train_test_ncacf(params, 'warm', k_split, data_dir=data_dir)
+            testndcg_c = train_test_ncacf(params, 'cold', k_split, data_dir=data_dir)
+            ndcg_warm, ndcg_cold = np.load(path_out)['ndcg_warm'], np.load(path_out)['ndcg_cold']
+            ndcg_warm['ncacf'][k_split], ndcg_cold['ncacf'][k_split] = testndcg_w, testndcg_c
+            np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
 
 # EOF
