@@ -228,7 +228,7 @@ if __name__ == '__main__':
             if model == 'wmf':
                 params['n_epochs'] = 150
                 testndcg = train_test_wmf(params, k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)['ndcg_warm']
+                ndcg_loader = np.load(path_out, allow_pickle=True)
                 ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
                 ndcg_warm['wmf'][k_split] = testndcg
                 np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
@@ -238,7 +238,7 @@ if __name__ == '__main__':
                 params['n_epochs'] = 150
                 testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
                 testndcg_c = train_test_2stages(params, 'cold', 'relaxed', k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)['ndcg_warm']
+                ndcg_loader = np.load(path_out, allow_pickle=True)
                 ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
                 ndcg_warm['dcb'][k_split], ndcg_cold['dcb'][k_split] = testndcg_w, testndcg_c
                 np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
@@ -248,7 +248,7 @@ if __name__ == '__main__':
                 params['n_epochs'] = 150
                 testndcg_w = train_test_mfhybrid(params, 'warm', 'relaxed', k_split, data_dir)
                 testndcg_c = train_test_mfhybrid(params, 'cold', 'relaxed', k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)['ndcg_warm']
+                ndcg_loader = np.load(path_out, allow_pickle=True)
                 ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
                 ndcg_warm['cdl'][k_split], ndcg_cold['cdl'][k_split] = testndcg_w, testndcg_c
                 np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
@@ -258,7 +258,7 @@ if __name__ == '__main__':
                 params['n_epochs'] = 150
                 testndcg_w = train_test_mfuni(params, 'warm', 'strict', k_split, data_dir)
                 testndcg_c = train_test_mfuni(params, 'cold', 'strict', k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)['ndcg_warm']
+                ndcg_loader = np.load(path_out, allow_pickle=True)
                 ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
                 ndcg_warm['dcue'][k_split], ndcg_cold['dcue'][k_split] = testndcg_w, testndcg_c
                 np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
@@ -268,7 +268,7 @@ if __name__ == '__main__':
                 params['n_epochs'] = 150
                 testndcg_w = train_test_mfuni(params, 'warm', 'relaxed', k_split, data_dir)
                 testndcg_c = train_test_mfuni(params, 'cold', 'relaxed', k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)['ndcg_warm']
+                ndcg_loader = np.load(path_out, allow_pickle=True)
                 ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
                 ndcg_warm['cccfnet'][k_split], ndcg_cold['cccfnet'][k_split] = testndcg_w, testndcg_c
                 np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
@@ -277,7 +277,7 @@ if __name__ == '__main__':
             elif model == 'ncf':
                 params['n_epochs'] = 100
                 testndcg_w = train_test_ncf(params, k_split, data_dir=data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)['ndcg_warm']
+                ndcg_loader = np.load(path_out, allow_pickle=True)
                 ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
                 ndcg_warm['ncf'][k_split] = testndcg_w
                 np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
@@ -287,7 +287,7 @@ if __name__ == '__main__':
                 params['n_epochs'] = 100
                 testndcg_w = train_test_ncacf(params, 'warm', k_split, data_dir=data_dir)
                 testndcg_c = train_test_ncacf(params, 'cold', k_split, data_dir=data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)['ndcg_warm']
+                ndcg_loader = np.load(path_out, allow_pickle=True)
                 ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
                 ndcg_warm['ncacf'][k_split], ndcg_cold['ncacf'][k_split] = testndcg_w, testndcg_c
                 np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
