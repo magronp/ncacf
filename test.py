@@ -14,6 +14,7 @@ from training.ncacf import train_ncacf
 from helpers.eval import evaluate_mf_hybrid, evaluate_uni
 from os.path import exists
 import sys
+import pickle
 
 
 def train_test_wmf(params, k_split, data_dir='data/'):
@@ -191,13 +192,15 @@ if __name__ == '__main__':
               'n_features_in': 168,
               'device': device}
     data_dir = 'data/'
-
-    # Create the dictionaries for storing the results
-    path_out = 'outputs/test_results.npz'
-    file_exists = exists(path_out)
     n_splits = 10
 
-    if not(file_exists):
+    # Create the dictionaries for storing the results
+    res_dir = 'outputs/test_results/'
+    create_folder(res_dir)
+
+    path_res_warm = res_dir + 'warm.pkl'
+    path_res_cold = res_dir + 'cold.pkl'
+    if not(exists(path_res_warm)):
         ndcg_warm = {'wmf': np.zeros(n_splits),
                      'dcb': np.zeros(n_splits),
                      'cdl': np.zeros(n_splits),
@@ -206,19 +209,26 @@ if __name__ == '__main__':
                      'ncf': np.zeros(n_splits),
                      'ncacf': np.zeros(n_splits)
                      }
+        f = open(path_res_warm, "wb")
+        pickle.dump(ndcg_warm, f)
+        f.close()
+
+    if not (exists(path_res_cold)):
         ndcg_cold = {'dcb': np.zeros(n_splits),
                      'cdl': np.zeros(n_splits),
                      'dcue': np.zeros(n_splits),
                      'cccfnet': np.zeros(n_splits),
                      'ncacf': np.zeros(n_splits)
                      }
-        np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+        f = open(path_res_cold, "wb")
+        pickle.dump(ndcg_cold, f)
+        f.close()
 
     split_list = range(n_splits)
 
     # List of baselines and methods to test
     #model_list = sys.argv[1:]
-    model_list = ['wmf', 'dcb', 'cdl', 'dcue', 'cccfnet', 'ncf', 'ncacf']
+    model_list = ['wmf']
 
     for model in model_list:
         for k_split in split_list:
@@ -227,7 +237,11 @@ if __name__ == '__main__':
             # WMF - only in the warm-start setting
             if model == 'wmf':
                 params['n_epochs'] = 150
-                testndcg = train_test_wmf(params, k_split, data_dir)
+                #testndcg = train_test_wmf(params, k_split, data_dir)
+                testndcg = 0
+
+                f = open(path_res_warm, "wrb")
+
                 ndcg_loader = np.load(path_out, allow_pickle=True)
                 ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
                 ndcg_warm['wmf'][k_split] = testndcg
