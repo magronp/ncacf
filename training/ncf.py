@@ -106,7 +106,7 @@ def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult', rec_model
 
 def train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/'):
 
-    val_lambda = not(len(range_lW) == 1 and len(range_lW) == 1)
+    val_lambda = not(len(range_lW) == 1 and len(range_lH) == 1)
     params['data_dir'] = data_dir + 'warm' + '/split0/'
 
     for inter in range_inter:

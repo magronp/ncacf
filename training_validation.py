@@ -39,14 +39,14 @@ if __name__ == '__main__':
 
         # WMF and 2-stage approaches - training with validation and model selection
         if model == 'twostages':
-            setting_list = ['cold']
+            setting_list = ['warm', 'cold']
             variant_list = ['relaxed', 'strict']
             params['n_iter_wmf'] = 30
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-            train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
-            #get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
-            #get_optimal_wmf(params, range_lW, range_lH)
+            #train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
+            get_optimal_wmf(params, range_lW, range_lH)
 
         # MF-Hybrid models - training with validation, and check the impact of N_GD
         elif model == 'mf_hybrid':
@@ -54,7 +54,7 @@ if __name__ == '__main__':
             variant_list = ['relaxed', 'strict']
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-            #train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
             n_ep_it_list = [2, 5, 10]
             check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
 
@@ -62,13 +62,8 @@ if __name__ == '__main__':
         elif model == 'mf_uni':
             setting_list = ['warm']
             params['n_epochs'] = 150
-
-            variant_list = ['relaxed', 'strict']
+            variant_list = ['relaxed']
             range_lW, range_lH = [10], [1, 10]
-            train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
-
-            variant_list = ['strict']
-            range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
             train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
 
         # NCF baseline - training with validation (lambda, interaction model, and number of layers)

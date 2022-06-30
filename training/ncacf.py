@@ -113,7 +113,7 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
 
 def train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/'):
 
-    val_lambda = not(len(range_lW) == 1 and len(range_lW) == 1)
+    val_lambda = not(len(range_lW) == 1 and len(range_lH) == 1)
 
     for setting in setting_list:
         params['data_dir'] = data_dir + setting + '/split0/'

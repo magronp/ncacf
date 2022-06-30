@@ -246,7 +246,7 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
     # In this case, set N_gd at 1
     params['n_ep_it'] = 1
     # Check if this is a validation scenario: if more than 1 value is given for lW / lH
-    val_b = not(len(range_lW) == 1 and len(range_lW) == 1)
+    val_b = not(len(range_lW) == 1 and len(range_lH) == 1)
 
     for setting in setting_list:
         # Define the dataset and output path depending on if it's in/out task
@@ -280,7 +280,7 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
                 params['out_dir'] = path_current + variant + '/'
                 create_folder(params['out_dir'])
                 train_mf_hybrid(params, variant=variant, setting=setting)
-                np.savez(path_current + 'hyperparams.npz', lW=params['lW'], lH=params['lH'])
+                np.savez( params['out_dir'] + 'hyperparams.npz', lW=params['lW'], lH=params['lH'])
 
     return
 
