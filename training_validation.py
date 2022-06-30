@@ -96,11 +96,12 @@ if __name__ == '__main__':
             #range_lW, range_lH, = [0.1], [0]
             #train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
 
-            #setting_list = ['warm']
-            #variant_list = ['strict']
-            #range_inter = ['conc']
-            #range_lW, range_lH, = [0.1], [0]
-            #train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+            setting_list = ['warm']
+            variant_list = ['strict']
+            range_inter = ['conc']
+            range_lW, range_lH, = [0.1], [0]
+            range_nl_di = [4, 5]
+            train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
 
             #setting_list = ['warm']
             #variant_list = ['relaxed']
@@ -108,11 +109,11 @@ if __name__ == '__main__':
             #range_lW, range_lH, = [0.1], [1]
             #train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
 
-            setting_list = ['warm']
-            variant_list = ['relaxed']
-            range_inter = ['conc']
-            range_lW, range_lH, = [0.1], [1]
-            train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
+            #setting_list = ['warm']
+            #variant_list = ['relaxed']
+            #range_inter = ['conc']
+            #range_lW, range_lH, = [0.1], [1]
+            #train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
 
         else:
             print('Unknown model')
