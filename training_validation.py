@@ -61,8 +61,13 @@ if __name__ == '__main__':
         # MF-Uni models - training with validation
         elif model == 'mf_uni':
             setting_list = ['warm']
-            variant_list = ['relaxed', 'strict']
             params['n_epochs'] = 150
+
+            variant_list = ['relaxed', 'strict']
+            range_lW, range_lH = [10], [1, 10]
+            train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+
+            variant_list = ['strict']
             range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
             train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
 
