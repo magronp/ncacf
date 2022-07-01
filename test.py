@@ -139,7 +139,7 @@ def train_test_ncf(params, k_split, data_dir='data/'):
 
     # Train and test
     params['out_dir'] = 'outputs/temp/ncf/'
-    create_folder('outputs/temp/')
+    create_folder(params['out_dir'])
     # first pretrain a shallow NCF model (no deep interaction layer, no nonlinear activation)
     train_ncf(params, path_pretrain=None, n_layers_di=-1, inter=inter, rec_model=True)
     # and then train the complete model with the right amount of deep layers
@@ -166,7 +166,7 @@ def train_test_ncacf(params, setting, k_split, data_dir='data/'):
 
     # Train and test
     params['out_dir'] = 'outputs/temp/ncacf/'
-    create_folder('outputs/temp/')
+    create_folder(params['out_dir'])
     # first pretrain a shallow NCACF model (no deep interaction layer, no nonlinear activation)
     train_ncacf(params, path_pretrain=None, n_layers_di=-1, setting=setting, variant=variant, inter=inter,
                 rec_model=True)
