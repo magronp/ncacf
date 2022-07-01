@@ -14,7 +14,6 @@ from training.ncacf import train_ncacf
 from helpers.eval import evaluate_mf_hybrid, evaluate_uni
 from os.path import exists
 import sys
-import pickle
 import pandas as pd
 
 
@@ -161,8 +160,8 @@ def train_test_ncacf(params, setting, k_split, data_dir='data/'):
         params['lW'], params['lH'] = float(hyper_opt['lW']), float(hyper_opt['lH'])
         ni_dl, inter, variant = int(hyper_opt['nl_di']), hyper_opt['inter'], hyper_opt['variant']
     else:
-        params['lW'], params['lH'] = 0.1, 0.1
-        ni_dl, inter, variant = 2, 'mult', 'relaxed'
+        params['lW'], params['lH'] = 0.1, 1
+        ni_dl, inter, variant = 5, 'mult', 'relaxed'
 
     # Train and test
     params['out_dir'] = 'outputs/temp/'
@@ -205,8 +204,8 @@ if __name__ == '__main__':
     split_list = range(n_splits)
 
     # List of baselines and methods to test
-    #model_list = sys.argv[1:]
-    model_list = ['wmf']
+    model_list = sys.argv[1:]
+    #model_list = ['wmf']
 
     # Main loop
     for model in model_list:
