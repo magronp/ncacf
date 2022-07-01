@@ -15,6 +15,7 @@ from helpers.eval import evaluate_mf_hybrid, evaluate_uni
 from os.path import exists
 import sys
 import pickle
+import pandas as pd
 
 
 def train_test_wmf(params, k_split, data_dir='data/'):
@@ -192,44 +193,22 @@ if __name__ == '__main__':
               'n_features_in': 168,
               'device': device}
     data_dir = 'data/'
+
+    # Create the result file if needed
+    path_res = 'outputs/test_results.csv'
+    if not (exists(path_res)):
+        test_results = pd.DataFrame(columns=['Setting', 'Model', 'Split', 'NDCG'])
+        test_results.to_csv(path_res, index=False, header=True)
+
+    # Define the list of splits
     n_splits = 10
-
-    # Create the dictionaries for storing the results
-    res_dir = 'outputs/test_results/'
-    create_folder(res_dir)
-
-    path_res_warm = res_dir + 'warm.pkl'
-    path_res_cold = res_dir + 'cold.pkl'
-    if not(exists(path_res_warm)):
-        ndcg_warm = {'wmf': np.zeros(n_splits),
-                     'dcb': np.zeros(n_splits),
-                     'cdl': np.zeros(n_splits),
-                     'dcue': np.zeros(n_splits),
-                     'cccfnet': np.zeros(n_splits),
-                     'ncf': np.zeros(n_splits),
-                     'ncacf': np.zeros(n_splits)
-                     }
-        f = open(path_res_warm, "wb")
-        pickle.dump(ndcg_warm, f)
-        f.close()
-
-    if not (exists(path_res_cold)):
-        ndcg_cold = {'dcb': np.zeros(n_splits),
-                     'cdl': np.zeros(n_splits),
-                     'dcue': np.zeros(n_splits),
-                     'cccfnet': np.zeros(n_splits),
-                     'ncacf': np.zeros(n_splits)
-                     }
-        f = open(path_res_cold, "wb")
-        pickle.dump(ndcg_cold, f)
-        f.close()
-
     split_list = range(n_splits)
 
     # List of baselines and methods to test
     #model_list = sys.argv[1:]
     model_list = ['wmf']
 
+    # Main loop
     for model in model_list:
         for k_split in split_list:
             print('Model : ' + model + ' ------ Split : ' + str(k_split))
@@ -237,73 +216,67 @@ if __name__ == '__main__':
             # WMF - only in the warm-start setting
             if model == 'wmf':
                 params['n_epochs'] = 150
-                #testndcg = train_test_wmf(params, k_split, data_dir)
-                testndcg = 0
-
-                f = open(path_res_warm, "wrb")
-
-                ndcg_loader = np.load(path_out, allow_pickle=True)
-                ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
-                ndcg_warm['wmf'][k_split] = testndcg
-                np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+                testndcg = train_test_wmf(params, k_split, data_dir)
+                # Append the test results to the csv file
+                df = pd.DataFrame({'Setting': ['warm'], 'Model': ['wmf'], 'Split': [k_split], 'NDCG': [testndcg]})
+                df.to_csv(path_res, mode='a', index=False, header=False)
 
             # DCB (corresponds to the '2 stage'-approach) - warm  (strict variant) and cold (relaxed variant)
             elif model == 'dcb':
                 params['n_epochs'] = 150
                 testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
                 testndcg_c = train_test_2stages(params, 'cold', 'relaxed', k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)
-                ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
-                ndcg_warm['dcb'][k_split], ndcg_cold['dcb'][k_split] = testndcg_w, testndcg_c
-                np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+                # Append the test results to the csv file
+                df = pd.DataFrame({'Setting': ['warm', 'cold'], 'Model': ['dcb', 'dcb'], 'Split': [k_split, k_split],
+                                    'NDCG': [testndcg_w, testndcg_c]})
+                df.to_csv(path_res, mode='a', index=False, header=False)
 
             # CDL - correspond to MF-Hybrid in the relaxed variant
             elif model == 'cdl':
                 params['n_epochs'] = 150
                 testndcg_w = train_test_mfhybrid(params, 'warm', 'relaxed', k_split, data_dir)
                 testndcg_c = train_test_mfhybrid(params, 'cold', 'relaxed', k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)
-                ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
-                ndcg_warm['cdl'][k_split], ndcg_cold['cdl'][k_split] = testndcg_w, testndcg_c
-                np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+                # Append the test results to the csv file
+                df = pd.DataFrame({'Setting': ['warm', 'cold'], 'Model': ['cdl', 'cdl'], 'Split': [k_split, k_split],
+                                   'NDCG': [testndcg_w, testndcg_c]})
+                df.to_csv(path_res, mode='a', index=False, header=False)
 
             # DCUE - correponds to MF-Uni in the strict variant
             elif model == 'dcue':
                 params['n_epochs'] = 150
                 testndcg_w = train_test_mfuni(params, 'warm', 'strict', k_split, data_dir)
                 testndcg_c = train_test_mfuni(params, 'cold', 'strict', k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)
-                ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
-                ndcg_warm['dcue'][k_split], ndcg_cold['dcue'][k_split] = testndcg_w, testndcg_c
-                np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+                # Append the test results to the csv file
+                df = pd.DataFrame({'Setting': ['warm', 'cold'], 'Model': ['dcue', 'dcue'], 'Split': [k_split, k_split],
+                                   'NDCG': [testndcg_w, testndcg_c]})
+                df.to_csv(path_res, mode='a', index=False, header=False)
 
             # CCCFnet - corresponds to MF-Uni in the relaxed variant
             elif model == 'cccfnet':
                 params['n_epochs'] = 150
                 testndcg_w = train_test_mfuni(params, 'warm', 'relaxed', k_split, data_dir)
                 testndcg_c = train_test_mfuni(params, 'cold', 'relaxed', k_split, data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)
-                ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
-                ndcg_warm['cccfnet'][k_split], ndcg_cold['cccfnet'][k_split] = testndcg_w, testndcg_c
-                np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+                # Append the test results to the csv file
+                df = pd.DataFrame({'Setting': ['warm', 'cold'], 'Model': ['cccfnet', 'cccfnet'],
+                                   'Split': [k_split, k_split], 'NDCG': [testndcg_w, testndcg_c]})
+                df.to_csv(path_res, mode='a', index=False, header=False)
 
             # NCF (only 1 variant and for the warm-start scenario)
             elif model == 'ncf':
                 params['n_epochs'] = 100
                 testndcg_w = train_test_ncf(params, k_split, data_dir=data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)
-                ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
-                ndcg_warm['ncf'][k_split] = testndcg_w
-                np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+                # Append the test results to the csv file
+                df = pd.DataFrame({'Setting': ['warm'], 'Model': ['ncf'], 'Split': [k_split], 'NDCG': [testndcg_w]})
+                df.to_csv(path_res, mode='a', index=False, header=False)
 
             # NCACF (get the optimal variant in the warm- and cold-start scenarios)
-            elif model == 'ncf':
+            elif model == 'ncacf':
                 params['n_epochs'] = 100
                 testndcg_w = train_test_ncacf(params, 'warm', k_split, data_dir=data_dir)
                 testndcg_c = train_test_ncacf(params, 'cold', k_split, data_dir=data_dir)
-                ndcg_loader = np.load(path_out, allow_pickle=True)
-                ndcg_warm, ndcg_cold = ndcg_loader['ndcg_warm'], ndcg_loader['ndcg_cold']
-                ndcg_warm['ncacf'][k_split], ndcg_cold['ncacf'][k_split] = testndcg_w, testndcg_c
-                np.savez(path_out, ndcg_warm=ndcg_warm, ndcg_cold=ndcg_cold)
+                # Append the test results to the csv file
+                df = pd.DataFrame({'Setting': ['warm', 'cold'], 'Model': ['ncacf', 'ncacf'],
+                                   'Split': [k_split, k_split], 'NDCG': [testndcg_w, testndcg_c]})
+                df.to_csv(path_res, mode='a', index=False, header=False)
 
 # EOF
