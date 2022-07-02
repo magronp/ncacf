@@ -29,16 +29,18 @@ def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult', rec_model
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
 
-    # Get the number of songs and users
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-
     # Path for the TP training data, features and the WMF
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
     path_features = params['data_dir'] + 'feats.num.csv'
 
-    # Get the playcount data and confidence
-    train_data, _, _, conf = load_tp_data(path_tp_train, 'warm')
+    # Define the dataset
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
+    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
+
+    # Get the number of songs and users
+    #n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    n_users, n_songs_train = my_dataset.n_users, my_dataset.n_songs
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'], n_layers_di, inter)
@@ -50,10 +52,6 @@ def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult', rec_model
     # Training setup
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
     torch.autograd.set_detect_anomaly(True)
-
-    # Define the dataset
-    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
-    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Initialize training log and optimal copies
     time_tot, loss_tot, val_ndcg_tot = 0, [], []

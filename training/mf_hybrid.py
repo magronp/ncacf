@@ -30,11 +30,6 @@ def train_mf_hybrid_relaxed(params, setting, rec_model=True, seed=1234):
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
 
-    # Get the number of songs and users
-    n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    if setting == 'cold':
-        n_songs_train = int(0.8 * 0.9 * n_songs_train)
-
     # Path for the TP data, WMF, and features
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
     path_wmf_temp = os.path.join(params['out_dir'], 'params_wmf_temp.npz')
@@ -46,6 +41,12 @@ def train_mf_hybrid_relaxed(params, setting, rec_model=True, seed=1234):
     # Get the playcount data, confidence, and precompute its transpose
     train_data, _, _, conf = load_tp_data(path_tp_train, setting)
     confT = conf.T.tocsr()
+
+    # Get the number of songs and users
+    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    #if setting == 'cold':
+    #    n_songs_train = int(0.8 * 0.9 * n_songs_train)
+    n_songs_train = train_data.shape[1]
 
     # Model parameters and definition
     my_model = ModelAttributes(params['n_features_in'], params['n_features_hidden'],
@@ -137,12 +138,6 @@ def train_mf_hybrid_strict(params, setting, rec_model=True, seed=1234):
     # Get the hyperparameter
     lW = params['lW']
 
-    # Get the number of songs and users
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    if setting == 'cold':
-        n_songs_train = int(0.8 * 0.9 * n_songs_train)
-
     # Path for the TP training data and features
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
     if setting == 'cold':
@@ -152,6 +147,13 @@ def train_mf_hybrid_strict(params, setting, rec_model=True, seed=1234):
 
     # Get the playcount data and confidence
     train_data, _, _, conf = load_tp_data(path_tp_train, setting)
+
+    # Get the number of songs and users
+    # n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    #if setting == 'cold':
+    #    n_songs_train = int(0.8 * 0.9 * n_songs_train)
+    n_users, n_songs_train = train_data.shape
 
     # Load the pre-trained model
     my_model = ModelAttributes(params['n_features_in'], params['n_features_hidden'],
@@ -163,7 +165,7 @@ def train_mf_hybrid_strict(params, setting, rec_model=True, seed=1234):
     my_dataloader_attr = DataLoader(my_dataset_attr, params['batch_size'], shuffle=False, drop_last=False)
 
     # Define the dataset
-    my_dataset_tr = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset_tr = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
     my_dataloader_tr = DataLoader(my_dataset_tr, params['batch_size'], shuffle=True, drop_last=True)
 
     # Training setup

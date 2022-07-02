@@ -28,18 +28,23 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
 
-    # Get the number of songs and users
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    if setting == 'cold':
-        n_songs_train = int(0.8 * 0.9 * n_songs_train)
-
     # Path for the TP training data, features and the WMF
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
     if setting == 'cold':
         path_features = os.path.join(params['data_dir'], 'train_feats.num.csv')
     else:
         path_features = os.path.join(params['data_dir'], 'feats.num.csv')
+
+    # Define the dataset
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
+    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
+
+    # Get the number of songs and users
+    n_users, n_songs_train = my_dataset.n_users, my_dataset.n_songs
+    #n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    #if setting == 'cold':
+    #    n_songs_train = int(0.8 * 0.9 * n_songs_train)
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelMFuni(n_users, n_songs_train, params['n_embeddings'], params['n_features_in'],
@@ -50,10 +55,6 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
     # Training setup
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
     torch.autograd.set_detect_anomaly(True)
-
-    # Define the dataset
-    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
-    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Initialize training log and optimal copies
     time_tot, loss_tot, val_ndcg_tot = 0, [], []

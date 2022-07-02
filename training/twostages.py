@@ -29,17 +29,18 @@ def train_wmf(params, setting, rec_model=True, seed=1234):
     # Get the hyperparameters
     lW, lH = params['lW'], params['lH']
 
-    # Get the number of songs and users
-    n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    if setting == 'cold':
-        n_songs_train = int(0.8 * 0.9 * n_songs_train)
-
     # Path for the features and the WMF
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
 
     # Get the playcount data, confidence, and precompute its transpose
     train_data, _, _, conf = load_tp_data(path_tp_train, setting)
     confT = conf.T.tocsr()
+
+    # Get the number of songs and users
+    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
+    #if setting == 'cold':
+    #    n_songs_train = int(0.8 * 0.9 * n_songs_train)
+    n_songs_train = train_data.shape[1]
 
     print('\n Update WMF factors...')
     start_time_wmf = time.time()
@@ -161,7 +162,7 @@ def train_2stages_strict(params, setting, rec_model=True, seed=1234):
     time_wmf, W = wmf_loader['time_wmf'], wmf_loader['W']
 
     # Dataset
-    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train, n_users=n_users)
+    my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Optimizer
