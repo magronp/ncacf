@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     # Define the list of splits
     n_splits = 10
-    np.arange(0, n_splits)
+    split_list = np.arange(6, 10)
 
     # List of baselines and methods to test
     model_list = sys.argv[1:]
@@ -225,7 +225,6 @@ if __name__ == '__main__':
             # DCB (corresponds to the '2 stage'-approach) - warm  (strict variant) and cold (relaxed variant)
             elif model == 'dcb':
                 params['n_epochs'] = 150
-                np.arange(6, 10)
                 #testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
                 testndcg_c = train_test_2stages(params, 'cold', 'relaxed', k_split, data_dir)
                 # Append the test results to the csv file
