@@ -204,7 +204,7 @@ if __name__ == '__main__':
     # Define the list of splits
     n_splits = 10
     split_list = np.arange(0, 10)
-    split_list = [6, 7]
+    split_list = [8, 9]
 
     # List of baselines and methods to test
     model_list = sys.argv[1:]
