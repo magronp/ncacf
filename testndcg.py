@@ -53,8 +53,8 @@ test_data = load_tp_data(os.path.join(params['data_dir'], 'test_tp.num.csv'), se
 #ndcg_test = my_ndcg_in(test_data, pred_ratings, k=50, leftout_ratings=train_data + val_data)[0]
 
 mask_test = np.zeros((n_users, n_songs_total), dtype=bool)
-mask_test[val_data.nonzero()] = True
+mask_test[train_data.nonzero()] = True
 mask_test = mask_test * 1
 
-test_dense = val_data.todense()
+test_dense = train_data.todense()
 print(np.linalg.norm((test_dense - pred_ratings*mask_test)))
