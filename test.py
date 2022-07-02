@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     # Define the list of splits
     n_splits = 10
-    split_list = range(n_splits)
+    np.arange(0, n_splits)
 
     # List of baselines and methods to test
     model_list = sys.argv[1:]
@@ -225,12 +225,14 @@ if __name__ == '__main__':
             # DCB (corresponds to the '2 stage'-approach) - warm  (strict variant) and cold (relaxed variant)
             elif model == 'dcb':
                 params['n_epochs'] = 150
-                testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
+                np.arange(6, 10)
+                #testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
                 testndcg_c = train_test_2stages(params, 'cold', 'relaxed', k_split, data_dir)
                 # Append the test results to the csv file
-                df = pd.DataFrame({'Setting': ['warm', 'cold'], 'Model': ['dcb', 'dcb'], 'Split': [k_split, k_split],
-                                    'NDCG': [testndcg_w, testndcg_c]})
-                df.to_csv(path_res, mode='a', index=False, header=False)
+                #dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['dcb'], 'Split': [k_split], 'NDCG': [testndcg_w]})
+                #dfw.to_csv(path_res, mode='a', index=False, header=False)
+                dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['dcb'], 'Split': [k_split], 'NDCG': [testndcg_c]})
+                dfc.to_csv(path_res, mode='a', index=False, header=False)
 
             # CDL - correspond to MF-Hybrid in the relaxed variant
             elif model == 'cdl':
