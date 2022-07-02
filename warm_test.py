@@ -46,6 +46,7 @@ loadnmf = np.load('outputs/warm/2stages/lW_1/lH_1/wmf.npz')
 W, H = loadnmf['W'], loadnmf['H']
 pred_ratings = W.dot(H.T)
 
+"""
 my_model = torch.load('outputs/warm/2stages/lW_1/lH_1/model_strict.pt', map_location=torch.device('cpu'))
 # Feature path - data loader
 path_features = os.path.join(params['data_dir'], 'feats.num.csv')
@@ -54,23 +55,16 @@ my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=False, drop
 # Predict attributes and binary playcounts
 pred_attributes = predict_attributes(my_model, my_dataloader, n_songs_total, params['n_embeddings'], params['device'])
 pred_ratings_torch = W.dot(pred_attributes.T)
-
-
-
+"""
 
 # Load playcount data
-train_data = load_tp_data(os.path.join(params['data_dir'], 'train_tp.num.csv'), setting='warm')[0]
-val_data = load_tp_data(os.path.join(params['data_dir'], 'val_tp.num.csv'), setting='warm')[0]
-test_data = load_tp_data(os.path.join(params['data_dir'], 'test_tp.num.csv'), setting='warm')[0]
-
 test_data, test_rows, test_cols, _ = load_tp_data(os.path.join(params['data_dir'], 'test_tp.num.csv'), setting='warm')
 val_data, val_rows, val_cols, _ = load_tp_data(os.path.join(params['data_dir'], 'val_tp.num.csv'), setting='warm')
 train_data, train_rows, train_cols, _ = load_tp_data(os.path.join(params['data_dir'], 'train_tp.num.csv'), setting='warm')
-
 
 # Get the score
 #ndcg_val = my_ndcg_in(val_data, pred_ratings, k=50, leftout_ratings=train_data)[0]
 #ndcg_test = my_ndcg_in(test_data, pred_ratings, k=50, leftout_ratings=train_data + val_data)[0]
 
 plot_data = train_data + val_data + test_data
-plt.hist(pred_ratings[plot_data.nonzero()])
+plt.hist(pred_ratings[test_data.nonzero()])

@@ -168,10 +168,10 @@ def train_test_ncacf(params, setting, k_split, data_dir='data/'):
     params['out_dir'] = 'outputs/temp/ncacf/'
     create_folder(params['out_dir'])
     # first pretrain a shallow NCACF model (no deep interaction layer, no nonlinear activation)
-    train_ncacf(params, path_pretrain=None, n_layers_di=-1, setting=setting, variant=variant, inter=inter,
-                rec_model=True)
+    #train_ncacf(params, path_pretrain=None, n_layers_di=-1, setting=setting, variant=variant, inter=inter,
+    #            rec_model=True)
     # and then train the complete model with the right amount of deep layers
-    model_opt = train_ncacf(params, path_pretrain=params['out_dir'], n_layers_di=-ni_dl, setting=setting,
+    model_opt = train_ncacf(params, path_pretrain=params['out_dir'], n_layers_di=ni_dl, setting=setting,
                             variant=variant, inter=inter, rec_model=False)
     test_ndcg = evaluate_uni(params, model_opt, setting=setting, split='test')
     return test_ndcg
@@ -203,7 +203,8 @@ if __name__ == '__main__':
 
     # Define the list of splits
     n_splits = 10
-    split_list = np.arange(0, 10)
+    #split_list = np.arange(0, 10)
+    split_list = [0]
 
     # List of baselines and methods to test
     model_list = sys.argv[1:]
