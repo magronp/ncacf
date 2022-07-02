@@ -206,8 +206,8 @@ if __name__ == '__main__':
     split_list = np.arange(6, 10)
 
     # List of baselines and methods to test
-    #model_list = sys.argv[1:]
-    model_list = ['dcb']
+    model_list = sys.argv[1:]
+    #model_list = ['dcb']
 
     # Main loop
     for model in model_list:
