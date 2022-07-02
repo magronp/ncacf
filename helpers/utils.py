@@ -135,7 +135,7 @@ def my_ndcg_cold(true_ratings, pred_ratings, batch_users=5000, k=None):
 
     # Get the mean and std NDCG over users
     ndcg = np.hstack(res)
-    # Add artifial nans where there are 0s (to avoid warnings)
+    # Replace 0s with Nans to take nanmean and avoid warnings
     ndcg[ndcg == 0] = np.nan
     ndcg_mean = np.nanmean(ndcg)
 
@@ -190,19 +190,20 @@ def my_ndcg_k_batch(true_ratings, pred_ratings, k=100):
 def my_ndcg_in(true_ratings, pred_ratings, batch_users=5000, k=None, leftout_ratings=None):
 
     n_users, n_songs = true_ratings.shape
+    predicted_ratings = np.copy(pred_ratings)
 
     # Remove predictions on the left-out ratings ('train' for validation, and 'train+val' for testing)
     if leftout_ratings is not None:
         item_idx = np.zeros((n_users, n_songs), dtype=bool)
         item_idx[leftout_ratings.nonzero()] = True
-        pred_ratings[item_idx] = -np.inf
+        predicted_ratings[item_idx] = -np.inf
 
     # Loop over user batches
     res = list()
     for user_idx in user_idx_generator(n_users, batch_users):
         # Take a batch
         true_ratings_batch = true_ratings[user_idx]
-        pred_ratings_batch = pred_ratings[user_idx, :]
+        pred_ratings_batch = predicted_ratings[user_idx, :]
         # Call the NDCG for the current batch (depending on k)
         # If k not specified, compute the whole (standard) NDCG instead of its truncated version NDCG@k
         if k is None:
@@ -213,7 +214,7 @@ def my_ndcg_in(true_ratings, pred_ratings, batch_users=5000, k=None, leftout_rat
 
     # Stack and get mean and std over users
     ndcg = np.hstack(res)
-    # Remove 0s (artifically added to avoid warnings)
+    # Replace 0s with Nans to take nanmean and avoid warnings
     ndcg[ndcg == 0] = np.nan
     ndcg_mean = np.nanmean(ndcg)
     ndcg_std = np.nanstd(ndcg)
@@ -245,19 +246,19 @@ def my_ndcg_in_batch(true_ratings, pred_ratings):
     return ndcg
 
 
-def my_ndcg_in_k_batch(true_ratings, pred_ratings, k=100):
+def my_ndcg_in_k_batch(true_ratings_batch, pred_ratings_batch, k=100):
 
-    n_users_currbatch = true_ratings.shape[0]
-    idx_topk_part = bn.argpartition(-pred_ratings, k, axis=1)
-    topk_part = pred_ratings[np.arange(n_users_currbatch)[:, np.newaxis], idx_topk_part[:, :k]]
+    n_users_currbatch = true_ratings_batch.shape[0]
+    idx_topk_part = bn.argpartition(-pred_ratings_batch, k, axis=1)
+    topk_part = pred_ratings_batch[np.arange(n_users_currbatch)[:, np.newaxis], idx_topk_part[:, :k]]
     idx_part = np.argsort(-topk_part, axis=1)
     idx_topk = idx_topk_part[np.arange(n_users_currbatch)[:, np.newaxis], idx_part]
 
     # build the discount template
     tp = 1. / np.log2(np.arange(2, k + 2))
 
-    dcg = (true_ratings[np.arange(n_users_currbatch)[:, np.newaxis], idx_topk].toarray() * tp).sum(axis=1)
-    idcg = np.array([(tp[:min(n, k)]).sum() for n in true_ratings.getnnz(axis=1)])
+    dcg = (true_ratings_batch[np.arange(n_users_currbatch)[:, np.newaxis], idx_topk].toarray() * tp).sum(axis=1)
+    idcg = np.array([(tp[:min(n, k)]).sum() for n in true_ratings_batch.getnnz(axis=1)])
     ndcg = dcg / (idcg + 1e-8)
 
     return ndcg
