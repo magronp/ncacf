@@ -47,7 +47,6 @@ class ModelMFuni(Module):
         if self.variant == 'relaxed':
             self.item_emb = Embedding(n_songs, n_embeddings)
             self.item_emb.weight.data.normal_(0, 0.01)
-            self.n_songs = n_songs
 
     def forward(self, u, x, i):
 
@@ -67,7 +66,6 @@ class ModelMFuni(Module):
             if self.variant == 'strict':
                 h = h_con
             else:
-                print(i.max())
                 h = self.item_emb(i)
 
         # Interaction model

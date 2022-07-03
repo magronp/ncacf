@@ -37,11 +37,10 @@ def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult', rec_model
     my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
-    # Get the number of songs and users
-    #n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    n_users, n_songs_train = my_dataset.n_users, my_dataset.n_songs
-    print(n_users, n_songs_train)
+    # Get the number of users and songs
+    train_data = load_tp_data(path_tp_train, 'warm')[0]
+    n_users, n_songs_train = train_data.shape
+
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'], n_layers_di, inter)
     if not(path_pretrain is None):

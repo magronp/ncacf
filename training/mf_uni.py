@@ -40,7 +40,7 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
     my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
-    # Get the playcount data and confidence
+    # Get the number of users and songs
     train_data = load_tp_data(path_tp_train, setting)[0]
     n_users, n_songs_train = train_data.shape
 
@@ -73,7 +73,6 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
             x = data[0].to(params['device'])
             count_i = torch.transpose(data[1], 1, 0).to(params['device'])
             it = data[2].to(params['device'])
-            print(it.max())
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
             # Back-propagation

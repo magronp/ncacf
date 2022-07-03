@@ -39,12 +39,9 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
     my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
-    # Get the number of songs and users
-    #n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    #if setting == 'cold':
-    #    n_songs_train = int(0.8 * 0.9 * n_songs_train)
-    n_users, n_songs_train = my_dataset.n_users, my_dataset.n_songs
+    # Get the number of users and songs
+    train_data = load_tp_data(path_tp_train, setting)[0]
+    n_users, n_songs_train = train_data.shape
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCACF(n_users, n_songs_train, params['n_features_in'], params['n_features_hidden'],
