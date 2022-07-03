@@ -97,7 +97,10 @@ def load_record_features(data_dir='data/'):
     return features_pd
 
 
-def update_tp_record(data_dir='data/'):
+def update_tp_record(data_dir='data/', seed=12345):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
 
     # Load the TP data
     tp = pd.read_csv(data_dir + 'tp.csv')
@@ -230,7 +233,10 @@ def numerize_cold(data_dir='data/', n_splits=10):
     return
 
 
-def split_warm(data_dir='data/', n_splits=10):
+def split_warm(data_dir='data/', n_splits=10, seed=12345):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
 
     # Load Taste profile data
     tp = pd.read_csv(data_dir + 'tp.csv')
@@ -320,13 +326,10 @@ def numerize_warm(data_dir='data/', n_splits=10):
 
 if __name__ == '__main__':
 
-    # Set random seed for reproducibility
-    np.random.seed(12345)
-
     MIN_USER_COUNT, MIN_SONG_COUNT, MIN_COUNT = 20, 50, 7
     data_dir = 'data/'
     n_splits = 10
-    """
+
     # Load the TP data and filter out inactive data
     load_filter_record_tp(data_dir, min_uc=MIN_USER_COUNT, min_sc=MIN_SONG_COUNT, min_c=MIN_COUNT)
 
@@ -340,7 +343,7 @@ if __name__ == '__main__':
     # Create the various splits (and numerize files) for the cold-start scenario
     split_cold(data_dir=data_dir, n_splits=n_splits)
     numerize_cold(data_dir=data_dir, n_splits=n_splits)
-    """
+
     # Same for the warm-start scenario
     split_warm(data_dir=data_dir, n_splits=n_splits)
     numerize_warm(data_dir=data_dir, n_splits=n_splits)
