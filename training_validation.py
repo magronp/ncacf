@@ -3,6 +3,7 @@
 __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
+import argparse
 import torch
 import sys
 from training.twostages import train_val_wmf_2stages, get_optimal_2stages, get_optimal_wmf
@@ -27,20 +28,30 @@ if __name__ == '__main__':
               'device': device}
     data_dir = 'data/'
 
-    # List of models to train/validate
-    model_list = sys.argv[1:]
-    #model_list = ['ncacf']
+    # Argument parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--Models", nargs='?', help="Models to test",
+                        default=['twostages', 'mf_hybrid', 'mf_uni', 'ncf', 'ncacf'])
+    parser.add_argument("-s", "--Settings", nargs='?', help="Warm and/or cold start settings",
+                        default=['warm', 'cold'])
+    parser.add_argument("-v", "--Variants", nargs='?', help="Variant (strict or relaxed)",
+                        default=['relaxed', 'strict'])
+    parser.add_argument("-i", "--Inter", nargs='?', help="Interaction model (mult or conc)",
+                        default=['mult', 'conc'])
+    parser.add_argument("-l", "--Layers", nargs='?', help="Number of layers in the interaction network",
+                        default=[-1, 0, 1, 2, 3, 4, 5])
+    args = parser.parse_args()
 
-    # Define the settings (warm and cold start) and the variants (relaxed and strict)
-    setting_list = ['warm', 'cold']
-    variant_list = ['relaxed', 'strict']
+    model_list = args.Models
+    setting_list = args.Settings
+    variant_list = args.Variants
+    range_inter = args.Inter
+    range_nl_di = args.Layers
 
     for model in model_list:
 
         # WMF and 2-stage approaches - training with validation and model selection
         if model == 'twostages':
-            setting_list = ['warm', 'cold']
-            variant_list = ['relaxed', 'strict']
             params['n_iter_wmf'] = 30
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
@@ -50,8 +61,6 @@ if __name__ == '__main__':
 
         # MF-Hybrid models - training with validation, and check the impact of N_GD
         elif model == 'mf_hybrid':
-            setting_list = ['warm']
-            variant_list = ['relaxed', 'strict']
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
             train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
@@ -60,7 +69,6 @@ if __name__ == '__main__':
 
         # MF-Uni models - training with validation
         elif model == 'mf_uni':
-            setting_list = ['warm']
             params['n_epochs'] = 150
             variant_list = ['relaxed', 'strict']
             range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
@@ -70,20 +78,15 @@ if __name__ == '__main__':
         elif model == 'ncf':
             range_lW, range_lH, = [0.1], [0.1]
             params['n_epochs'] = 100
-            range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4]
             train_val_ncf(params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
             get_optimal_ncf(range_inter, range_nl_di)
 
         # NCACF - training with validation (interaction model, number of layers, variant)
         elif model == 'ncacf':
             params['n_epochs'] = 100
-            setting_list = ["cold"]
-            #range_nl_di = [-1, 0, 1, 2, 3, 4, 5]
-            #range_inter = ['mult', 'conc']
-            range_nl_di, range_inter = [3], ['mult']
-            range_lW, range_lH, = [0.1], [0.1]
+            range_lW, range_lH, = [0.1], [1]
             train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir)
-            #get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
+            get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
 
         else:
             print('Unknown model')
