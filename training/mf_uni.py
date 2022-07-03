@@ -41,7 +41,7 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
     # Get the playcount data and confidence
-    train_data, _, _, _ = load_tp_data(path_tp_train, setting)[0]
+    train_data = load_tp_data(path_tp_train, setting)[0]
     n_users, n_songs_train = train_data.shape
 
     # Define and initialize the model, and get the hyperparameters
