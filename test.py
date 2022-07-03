@@ -5,6 +5,7 @@ __docformat__ = 'reStructuredText'
 
 import numpy as np
 import torch
+import argparse
 from helpers.utils import create_folder
 from training.twostages import train_wmf, train_2stages
 from training.mf_hybrid import train_mf_hybrid
@@ -13,7 +14,6 @@ from training.ncf import train_ncf
 from training.ncacf import train_ncacf
 from helpers.eval import evaluate_mf_hybrid, evaluate_uni
 from os.path import exists
-import sys
 import pandas as pd
 
 
@@ -195,20 +195,25 @@ if __name__ == '__main__':
               'device': device}
     data_dir = 'data/'
 
+    # Amount of splits
+    n_splits = 10
+
     # Create the result file if needed
     path_res = 'outputs/test_results.csv'
     if not (exists(path_res)):
         test_results = pd.DataFrame(columns=['Setting', 'Model', 'Split', 'NDCG'])
         test_results.to_csv(path_res, index=False, header=True)
 
-    # Define the list of splits
-    n_splits = 10
-    #split_list = np.arange(0, 10)
-    split_list = [7, 8, 9]
+    # Argument parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--Models", nargs='*', help="Models to test",
+                        default=['wmf', 'dcb', 'cdl', 'dcue', 'cccfnet', 'ncf', 'ncacf'])
+    parser.add_argument("-k", "--Splits", nargs='*', help="Split(s) to test",
+                        default=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    args = parser.parse_args()
 
-    # List of baselines and methods to test
-    model_list = sys.argv[1:]
-    #model_list = ['dcb']
+    model_list = args.Models
+    split_list = list(map(int, args.Splits))
 
     # Main loop
     for model in model_list:
