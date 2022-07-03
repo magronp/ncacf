@@ -251,6 +251,7 @@ def split_warm(data_dir='data/', n_splits=10):
     # Get the remaining data for train/test, as well as the corresponding indices
     train_test_tp = tp[~val_idx]
     train_test_idx = np.array(train_test_tp.index.values.tolist())
+    np.random.shuffle(train_test_idx)
 
     # Perform K splits on the remaining data (train and test)
     kf = KFold(n_splits=n_splits)
@@ -325,7 +326,7 @@ if __name__ == '__main__':
     MIN_USER_COUNT, MIN_SONG_COUNT, MIN_COUNT = 20, 50, 7
     data_dir = 'data/'
     n_splits = 10
-
+    """
     # Load the TP data and filter out inactive data
     load_filter_record_tp(data_dir, min_uc=MIN_USER_COUNT, min_sc=MIN_SONG_COUNT, min_c=MIN_COUNT)
 
@@ -339,7 +340,7 @@ if __name__ == '__main__':
     # Create the various splits (and numerize files) for the cold-start scenario
     split_cold(data_dir=data_dir, n_splits=n_splits)
     numerize_cold(data_dir=data_dir, n_splits=n_splits)
-
+    """
     # Same for the warm-start scenario
     split_warm(data_dir=data_dir, n_splits=n_splits)
     numerize_warm(data_dir=data_dir, n_splits=n_splits)
