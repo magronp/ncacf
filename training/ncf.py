@@ -41,7 +41,7 @@ def train_ncf(params, path_pretrain=None, n_layers_di=2, inter='mult', rec_model
     #n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
     #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
     n_users, n_songs_train = my_dataset.n_users, my_dataset.n_songs
-
+    print(n_users, n_songs_train)
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelNCF(n_users, n_songs_train, params['n_embeddings'], n_layers_di, inter)
     if not(path_pretrain is None):
