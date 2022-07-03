@@ -66,6 +66,7 @@ class ModelMFuni(Module):
             if self.variant == 'strict':
                 h = h_con
             else:
+                print(i.shape)
                 h = self.item_emb(i)
 
         # Interaction model

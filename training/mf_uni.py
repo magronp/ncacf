@@ -51,6 +51,7 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
                           params['n_features_hidden'], variant)
     my_model.requires_grad_(True)
     my_model.to(params['device'])
+    print(n_songs_train)
 
     # Training setup
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
@@ -77,7 +78,6 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
             # Back-propagation
-            print(count_i.shape, pred_rat.shape, w.shape, h.shape, h_con.shape, lW, lH)
             loss = wpe_joint(count_i, pred_rat, w, h, h_con, lW, lH)
             loss.backward()
             clip_grad_norm_(my_model.parameters(), max_norm=1.)
