@@ -141,9 +141,6 @@ def train_2stages_strict(params, setting, rec_model=True, seed=1234):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    # Get the number of songs and users
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-
     # Path for the TP training data, features and the WMF
     path_tp_train = params['data_dir'] + 'train_tp.num.csv'
     path_wmf = os.path.join(params['out_dir'], 'wmf.npz')

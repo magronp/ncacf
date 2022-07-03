@@ -39,14 +39,9 @@ def train_mf_hybrid_relaxed(params, setting, rec_model=True, seed=1234):
         path_features = os.path.join(params['data_dir'], 'feats.num.csv')
 
     # Get the playcount data, confidence, and precompute its transpose
-    train_data, _, _, conf = load_tp_data(path_tp_train, setting)
+    _, _, _, conf = load_tp_data(path_tp_train, setting)
     confT = conf.T.tocsr()
-
-    # Get the number of songs and users
-    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    #if setting == 'cold':
-    #    n_songs_train = int(0.8 * 0.9 * n_songs_train)
-    n_songs_train = train_data.shape[1]
+    n_songs_train = conf.shape[1]
 
     # Model parameters and definition
     my_model = ModelAttributes(params['n_features_in'], params['n_features_hidden'],
@@ -146,14 +141,8 @@ def train_mf_hybrid_strict(params, setting, rec_model=True, seed=1234):
         path_features = os.path.join(params['data_dir'], 'feats.num.csv')
 
     # Get the playcount data and confidence
-    train_data, _, _, conf = load_tp_data(path_tp_train, setting)
-
-    # Get the number of songs and users
-    # n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    #if setting == 'cold':
-    #    n_songs_train = int(0.8 * 0.9 * n_songs_train)
-    n_users, n_songs_train = train_data.shape
+    _, _, _, conf = load_tp_data(path_tp_train, setting)
+    n_songs_train = conf.shape[1]
 
     # Load the pre-trained model
     my_model = ModelAttributes(params['n_features_in'], params['n_features_hidden'],

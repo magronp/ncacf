@@ -17,6 +17,7 @@ from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 from helpers.data_feeder import DatasetPlaycounts
 import copy
+from helpers.data_feeder import load_tp_data
 
 
 def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed=1234):
@@ -39,19 +40,16 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
     my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
     my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
 
-    # Get the number of songs and users
-    n_users, n_songs_train = my_dataset.n_users, my_dataset.n_songs
-    #n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    #n_songs_train = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    #if setting == 'cold':
-    #    n_songs_train = int(0.8 * 0.9 * n_songs_train)
+    # Get the playcount data and confidence
+    train_data, _, _, _ = load_tp_data(path_tp_train, setting)[0]
+    n_users, n_songs_train = train_data.shape
 
     # Define and initialize the model, and get the hyperparameters
     my_model = ModelMFuni(n_users, n_songs_train, params['n_embeddings'], params['n_features_in'],
                           params['n_features_hidden'], variant)
     my_model.requires_grad_(True)
     my_model.to(params['device'])
-    print(n_songs_train)
+    print(my_model.n_songs)
 
     # Training setup
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
@@ -75,6 +73,7 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
             x = data[0].to(params['device'])
             count_i = torch.transpose(data[1], 1, 0).to(params['device'])
             it = data[2].to(params['device'])
+            print(it.max())
             # Forward pass
             pred_rat, w, h, h_con = my_model(u_total, x, it)
             # Back-propagation
