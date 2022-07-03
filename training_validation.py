@@ -30,15 +30,15 @@ if __name__ == '__main__':
 
     # Argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--Models", nargs='?', help="Models to test",
+    parser.add_argument("-m", "--Models", nargs='*', help="Models to test",
                         default=['twostages', 'mf_hybrid', 'mf_uni', 'ncf', 'ncacf'])
-    parser.add_argument("-s", "--Settings", nargs='?', help="Warm and/or cold start settings",
+    parser.add_argument("-s", "--Settings", nargs='*', help="Warm and/or cold start settings",
                         default=['warm', 'cold'])
-    parser.add_argument("-v", "--Variants", nargs='?', help="Variant (strict or relaxed)",
+    parser.add_argument("-v", "--Variants", nargs='*', help="Variant (strict or relaxed)",
                         default=['relaxed', 'strict'])
-    parser.add_argument("-i", "--Inter", nargs='?', help="Interaction model (mult or conc)",
+    parser.add_argument("-i", "--Inter", nargs='*', help="Interaction model (mult or conc)",
                         default=['mult', 'conc'])
-    parser.add_argument("-l", "--Layers", nargs='?', help="Number of layers in the interaction network",
+    parser.add_argument("-l", "--Layers", nargs='*', help="Number of layers in the interaction network",
                         default=[-1, 0, 1, 2, 3, 4, 5])
     args = parser.parse_args()
 
