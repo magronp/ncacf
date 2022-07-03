@@ -46,7 +46,7 @@ if __name__ == '__main__':
     setting_list = args.Settings
     variant_list = args.Variants
     range_inter = args.Inter
-    range_nl_di = args.Layers
+    range_nl_di = list(map(int, args.Layers))
 
     for model in model_list:
 
