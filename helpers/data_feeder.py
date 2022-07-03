@@ -82,6 +82,9 @@ class DatasetPlaycounts(Dataset):
         # Also need to care about SIDs, as for cold-start these do not match: we want them to range from 0 to n_songs-1
         self.tp_data['sid'] -= self.tp_data['sid'].min()
 
+        # Store the number of users in the dataset
+        self.n_users = len(np.unique(self.tp_data['uid']))
+
     def __len__(self):
         return self.x.__len__()
 
