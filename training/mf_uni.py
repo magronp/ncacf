@@ -49,7 +49,6 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
                           params['n_features_hidden'], variant)
     my_model.requires_grad_(True)
     my_model.to(params['device'])
-    print(my_model.n_songs)
 
     # Training setup
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
