@@ -225,46 +225,46 @@ if __name__ == '__main__':
             # DCB (corresponds to the '2 stage'-approach) - warm  (strict variant) and cold (relaxed variant)
             elif model == 'dcb':
                 params['n_epochs'] = 150
-                #testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
-                testndcg_c = train_test_2stages(params, 'cold', 'relaxed', k_split, data_dir)
+                testndcg_w = train_test_2stages(params, 'warm', 'strict', k_split, data_dir)
+                #testndcg_c = train_test_2stages(params, 'cold', 'relaxed', k_split, data_dir)
                 # Append the test results to the csv file
-                #dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['dcb'], 'Split': [k_split], 'NDCG': [testndcg_w]})
-                #dfw.to_csv(path_res, mode='a', index=False, header=False)
-                dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['dcb'], 'Split': [k_split], 'NDCG': [testndcg_c]})
-                dfc.to_csv(path_res, mode='a', index=False, header=False)
+                dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['dcb'], 'Split': [k_split], 'NDCG': [testndcg_w]})
+                dfw.to_csv(path_res, mode='a', index=False, header=False)
+                #dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['dcb'], 'Split': [k_split], 'NDCG': [testndcg_c]})
+                #dfc.to_csv(path_res, mode='a', index=False, header=False)
 
             # CDL - correspond to MF-Hybrid in the relaxed variant
             elif model == 'cdl':
                 params['n_epochs'] = 150
-                #testndcg_w = train_test_mfhybrid(params, 'warm', 'relaxed', k_split, data_dir)
-                testndcg_c = train_test_mfhybrid(params, 'cold', 'relaxed', k_split, data_dir)
+                testndcg_w = train_test_mfhybrid(params, 'warm', 'relaxed', k_split, data_dir)
+                #testndcg_c = train_test_mfhybrid(params, 'cold', 'relaxed', k_split, data_dir)
                 # Append the test results to the csv file
-                #dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['cdl'], 'Split': [k_split], 'NDCG': [testndcg_w]})
-                #dfw.to_csv(path_res, mode='a', index=False, header=False)
-                dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['cdl'], 'Split': [k_split], 'NDCG': [testndcg_c]})
-                dfc.to_csv(path_res, mode='a', index=False, header=False)
+                dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['cdl'], 'Split': [k_split], 'NDCG': [testndcg_w]})
+                dfw.to_csv(path_res, mode='a', index=False, header=False)
+                #dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['cdl'], 'Split': [k_split], 'NDCG': [testndcg_c]})
+                #dfc.to_csv(path_res, mode='a', index=False, header=False)
 
             # DCUE - correponds to MF-Uni in the strict variant
             elif model == 'dcue':
                 params['n_epochs'] = 150
-                #testndcg_w = train_test_mfuni(params, 'warm', 'strict', k_split, data_dir)
-                testndcg_c = train_test_mfuni(params, 'cold', 'strict', k_split, data_dir)
+                testndcg_w = train_test_mfuni(params, 'warm', 'strict', k_split, data_dir)
+                #testndcg_c = train_test_mfuni(params, 'cold', 'strict', k_split, data_dir)
                 # Append the test results to the csv file
-                #dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['dcue'], 'Split': [k_split], 'NDCG': [testndcg_w]})
-                #dfw.to_csv(path_res, mode='a', index=False, header=False)
-                dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['dcue'], 'Split': [k_split], 'NDCG': [testndcg_c]})
-                dfc.to_csv(path_res, mode='a', index=False, header=False)
+                dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['dcue'], 'Split': [k_split], 'NDCG': [testndcg_w]})
+                dfw.to_csv(path_res, mode='a', index=False, header=False)
+                #dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['dcue'], 'Split': [k_split], 'NDCG': [testndcg_c]})
+                #dfc.to_csv(path_res, mode='a', index=False, header=False)
 
             # CCCFnet - corresponds to MF-Uni in the relaxed variant
             elif model == 'cccfnet':
                 params['n_epochs'] = 150
-                #testndcg_w = train_test_mfuni(params, 'warm', 'relaxed', k_split, data_dir)
-                testndcg_c = train_test_mfuni(params, 'cold', 'relaxed', k_split, data_dir)
+                testndcg_w = train_test_mfuni(params, 'warm', 'relaxed', k_split, data_dir)
+                #testndcg_c = train_test_mfuni(params, 'cold', 'relaxed', k_split, data_dir)
                 # Append the test results to the csv file
-                #dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['cccfnet'], 'Split': [k_split], 'NDCG': [testndcg_w]})
-                #dfw.to_csv(path_res, mode='a', index=False, header=False)
-                dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['cccfnet'], 'Split': [k_split], 'NDCG': [testndcg_c]})
-                dfc.to_csv(path_res, mode='a', index=False, header=False)
+                dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['cccfnet'], 'Split': [k_split], 'NDCG': [testndcg_w]})
+                dfw.to_csv(path_res, mode='a', index=False, header=False)
+                #dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['cccfnet'], 'Split': [k_split], 'NDCG': [testndcg_c]})
+                #dfc.to_csv(path_res, mode='a', index=False, header=False)
 
             # NCF (only 1 variant and for the warm-start scenario)
             elif model == 'ncf':
@@ -277,11 +277,11 @@ if __name__ == '__main__':
             # NCACF (get the optimal variant in the warm- and cold-start scenarios)
             elif model == 'ncacf':
                 params['n_epochs'] = 100
-                #testndcg_w = train_test_ncacf(params, 'warm', k_split, data_dir=data_dir)
-                testndcg_c = train_test_ncacf(params, 'cold', k_split, data_dir=data_dir)
+                testndcg_w = train_test_ncacf(params, 'warm', k_split, data_dir=data_dir)
+                #testndcg_c = train_test_ncacf(params, 'cold', k_split, data_dir=data_dir)
                 # Append the test results to the csv file
-                #dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['ncacf'], 'Split': [k_split], 'NDCG': [testndcg_w]})
-                #dfw.to_csv(path_res, mode='a', index=False, header=False)
-                dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['ncacf'], 'Split': [k_split], 'NDCG': [testndcg_c]})
-                dfc.to_csv(path_res, mode='a', index=False, header=False)
+                dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['ncacf'], 'Split': [k_split], 'NDCG': [testndcg_w]})
+                dfw.to_csv(path_res, mode='a', index=False, header=False)
+                #dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['ncacf'], 'Split': [k_split], 'NDCG': [testndcg_c]})
+                #dfc.to_csv(path_res, mode='a', index=False, header=False)
 # EOF
