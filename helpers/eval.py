@@ -121,7 +121,10 @@ def evaluate_uni_cold(params, my_model, split='val'):
     # Define a data loader
     my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
     my_dataloader_eval = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
-    n_users, n_songs = DatasetAttributes.n_users, DatasetAttributes.n_songs
+
+    # Get the number of users and songs
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs = DatasetAttributes.n_songs
 
     # Compute the model output (predicted ratings)
     us_total = torch.arange(0, n_users, dtype=torch.long).to(params['device'])
@@ -148,7 +151,7 @@ def evaluate_uni_cold(params, my_model, split='val'):
 
 def evaluate_uni_warm(params, my_model, split='val'):
 
-    #n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
     #n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
 
     # Paths for features
@@ -158,7 +161,10 @@ def evaluate_uni_warm(params, my_model, split='val'):
     # Define a data loader
     my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
     my_dataloader_eval = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
-    n_users, n_songs = DatasetAttributes.n_users, DatasetAttributes.n_songs
+
+    # Get the number of users and songs
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs = DatasetAttributes.n_songs
 
     # Compute the model output
     us_total = torch.arange(0, n_users, dtype=torch.long).to(params['device'])

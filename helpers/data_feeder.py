@@ -61,12 +61,11 @@ class DatasetAttributes(Dataset):
         self.x = torch.Tensor(x).float()
         self.h = torch.Tensor(h).float()
 
-        # Store the number of users and songs in the current subset
-        self.n_users = len(np.unique(self.tp_data['uid']))
-        self.n_songs = len(np.unique(self.tp_data['sid']))
+        # Store the number songs in the current subset
+        self.n_songs = self.x.size()[0]
 
     def __len__(self):
-        return self.x.size()[0]
+        return self.n_songs
 
     def __getitem__(self, item):
         return self.x[item, :], self.h[item, :], item
