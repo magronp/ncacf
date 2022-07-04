@@ -13,14 +13,14 @@ from helpers.data_feeder import load_tp_data, DatasetAttributes
 from torch.utils.data import DataLoader
 
 
-def predict_attributes(my_model, my_data_loader, n_songs, n_embeddings, device):
+def predict_attributes(my_model, my_dataloader, n_songs, n_embeddings, device):
 
     my_model = my_model.to(device)
     # Compute the model output (predicted attributes)
     predicted_attributes = torch.zeros([n_songs, n_embeddings]).to(device)
     my_model.eval()
     with torch.no_grad():
-        for data in tqdm(my_data_loader, desc='Computing predicted attributes', unit=' Songs'):
+        for data in tqdm(my_dataloader, desc='Computing predicted attributes', unit=' Songs'):
             predicted_attributes[data[2].to(device), :] = my_model(data[0].to(device))
 
     predicted_attributes = predicted_attributes.cpu().detach().numpy()
@@ -47,14 +47,16 @@ def evaluate_mf_hybrid_cold(params, W, my_model, split='val'):
     # Predict the attributes and ratings
     # Define a data loader
     my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
-    my_dataloader = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
+    my_dataloader_eval = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
 
-    # Get the number of users and songs
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    # Predict attributes and binary playcounts
     n_songs = my_dataset_eval.n_songs
-
-    pred_attributes = predict_attributes(my_model, my_dataloader, n_songs, params['n_embeddings'], params['device'])
+    pred_attributes = predict_attributes(my_model, my_dataloader_eval, n_songs, params['n_embeddings'], params['device'])
     pred_ratings = W.dot(pred_attributes.T)
+
+    # Sort the pred_ratings by corresponding SID order, using the data2sid
+    data2sid = my_dataset_eval.datapoint2sid
+    pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     # Load the evaluation subset true ratings
     #eval_data, rows_eval, cols_eval, _ = load_tp_data(path_tp_eval, setting='cold')
@@ -74,16 +76,16 @@ def evaluate_mf_hybrid_warm(params, W, H, my_model, variant='relaxed', split='va
     if variant == 'strict':
         # Feature path - data loader
         path_features = os.path.join(params['data_dir'], 'feats.num.csv')
-        my_dataset = DatasetAttributes(wmf_path=None, features_path=path_features)
-        my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=False, drop_last=False)
+        my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
+        my_dataloader_eval = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
 
         # Predict attributes and binary playcounts
-        n_songs = my_dataset.n_songs
-        pred_attributes = predict_attributes(my_model, my_dataloader, n_songs, params['n_embeddings'], params['device'])
+        n_songs = my_dataset_eval.n_songs
+        pred_attributes = predict_attributes(my_model, my_dataloader_eval, n_songs, params['n_embeddings'], params['device'])
         pred_ratings = W.dot(pred_attributes.T)
 
         # Sort the pred_ratings by corresponding SID order, using the data2sid
-        data2sid = my_dataset.datapoint2sid
+        data2sid = my_dataset_eval.datapoint2sid
         pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     else:
