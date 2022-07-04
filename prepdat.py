@@ -143,7 +143,10 @@ def update_tp_record(data_dir='data/', seed=12345):
     return
 
 
-def split_cold(data_dir='data/', n_splits=10):
+def split_cold(data_dir='data/', n_splits=10, seed=12345):
+
+    # Set random seed for reproducibility
+    np.random.seed(seed)
 
     # Load Taste profile data and the SSDs features
     tp = pd.read_csv(data_dir + 'tp.csv')
@@ -151,9 +154,11 @@ def split_cold(data_dir='data/', n_splits=10):
 
     # Load the list of unique songs
     unique_sid = []
-    with open(data_dir + '/unique_sid.txt', 'r') as f:
+    with open(data_dir + 'unique_sid.txt', 'r') as f:
         for line in f:
             unique_sid.append(line.strip())
+
+    np.random.shuffle(unique_sid)
 
     # Select 20% of the songs as held-out validation data
     n_songs = len(unique_sid)
@@ -331,21 +336,21 @@ if __name__ == '__main__':
     n_splits = 10
 
     # Load the TP data and filter out inactive data
-    load_filter_record_tp(data_dir, min_uc=MIN_USER_COUNT, min_sc=MIN_SONG_COUNT, min_c=MIN_COUNT)
+    #load_filter_record_tp(data_dir, min_uc=MIN_USER_COUNT, min_sc=MIN_SONG_COUNT, min_c=MIN_COUNT)
 
     # Process the song features
-    load_record_features(data_dir)
+    #load_record_features(data_dir)
 
     # Update the TP songs (to keep only those for which there are available features), and print the density level
-    update_tp_record(data_dir)
-    density_level = print_density_level(data_dir)
+    #update_tp_record(data_dir)
+    #density_level = print_density_level(data_dir)
 
     # Create the various splits (and numerize files) for the cold-start scenario
     split_cold(data_dir=data_dir, n_splits=n_splits)
     numerize_cold(data_dir=data_dir, n_splits=n_splits)
 
     # Same for the warm-start scenario
-    split_warm(data_dir=data_dir, n_splits=n_splits)
-    numerize_warm(data_dir=data_dir, n_splits=n_splits)
+    #split_warm(data_dir=data_dir, n_splits=n_splits)
+    #numerize_warm(data_dir=data_dir, n_splits=n_splits)
 
 # EOF
