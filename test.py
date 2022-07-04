@@ -222,7 +222,7 @@ if __name__ == '__main__':
     for model in model_list:
         for setting in setting_list:
             for k_split in split_list:
-                print('Model : ' + model + ' ------ Setting: ' + setting + ' ------ Split : ' + str(k_split))
+                print('Model : ' + model + ' ------ Setting : ' + setting + ' ------ Split : ' + str(k_split))
                 testndcg = None
 
                 if model == 'wmf':
@@ -235,7 +235,10 @@ if __name__ == '__main__':
                     testndcg_w = train_test_2stages(params, setting, 'strict', k_split, data_dir=data_dir)
 
                 elif model == 'cdl':
-                    params['n_epochs'] = 150
+                    if setting == 'cold':
+                        params['n_epochs'] = 150
+                    else:
+                        params['n_epochs'] = 50
                     testndcg_w = train_test_mfhybrid(params, setting, 'relaxed', k_split, data_dir=data_dir)
 
                 elif model == 'dcue':
