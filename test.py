@@ -154,8 +154,8 @@ def train_test_ncacf(params, setting, k_split, data_dir='data/'):
     params['data_dir'] = data_dir + setting + '/split' + str(k_split) + '/'
 
     # Hyperparameters
-    params['lW'], params['lH'] = 10, 10
-    ni_dl, inter, variant = 5, 'mult', 'relaxed'
+    params['lW'], params['lH'] = 0, 10
+    ni_dl, inter, variant = 2, 'mult', 'relaxed'
     """ 
     path_hyperparams = 'outputs/' + setting + '/ncacf/hyperparams.npz'
     file_exists = exists(path_hyperparams)
