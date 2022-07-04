@@ -283,11 +283,11 @@ if __name__ == '__main__':
             # NCACF (get the optimal variant in the warm- and cold-start scenarios)
             elif model == 'ncacf':
                 params['n_epochs'] = 100
-                #testndcg_w = train_test_ncacf(params, 'warm', k_split, data_dir=data_dir)
-                testndcg_c = train_test_ncacf(params, 'cold', k_split, data_dir=data_dir)
+                testndcg_w = train_test_ncacf(params, 'warm', k_split, data_dir=data_dir)
+                #testndcg_c = train_test_ncacf(params, 'cold', k_split, data_dir=data_dir)
                 # Append the test results to the csv file
-                #dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['ncacf'], 'Split': [k_split], 'NDCG': [testndcg_w]})
-                #dfw.to_csv(path_res, mode='a', index=False, header=False)
-                dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['ncacf'], 'Split': [k_split], 'NDCG': [testndcg_c]})
-                dfc.to_csv(path_res, mode='a', index=False, header=False)
+                dfw = pd.DataFrame({'Setting': ['warm'], 'Model': ['ncacf'], 'Split': [k_split], 'NDCG': [testndcg_w]})
+                dfw.to_csv(path_res, mode='a', index=False, header=False)
+                #dfc = pd.DataFrame({'Setting': ['cold'], 'Model': ['ncacf'], 'Split': [k_split], 'NDCG': [testndcg_c]})
+                #dfc.to_csv(path_res, mode='a', index=False, header=False)
 # EOF
