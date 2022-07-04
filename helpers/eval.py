@@ -124,7 +124,7 @@ def evaluate_uni_cold(params, my_model, split='val'):
 
     # Get the number of users and songs
     n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs = DatasetAttributes.n_songs
+    n_songs = my_dataset_eval.n_songs
 
     # Compute the model output (predicted ratings)
     us_total = torch.arange(0, n_users, dtype=torch.long).to(params['device'])
@@ -137,7 +137,7 @@ def evaluate_uni_cold(params, my_model, split='val'):
             pred_ratings[:, data[2]] = pred.cpu().detach().numpy().squeeze()
 
     # Sort the pred_ratings by corresponding SID order, using the data2sid
-    data2sid = DatasetAttributes.data2sid
+    data2sid = my_dataset_eval.datapoint2sid
     pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     # Load the evaluation subset true ratings
@@ -164,7 +164,7 @@ def evaluate_uni_warm(params, my_model, split='val'):
 
     # Get the number of users and songs
     n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs = DatasetAttributes.n_songs
+    n_songs = my_dataset_eval.n_songs
 
     # Compute the model output
     us_total = torch.arange(0, n_users, dtype=torch.long).to(params['device'])
@@ -176,7 +176,7 @@ def evaluate_uni_warm(params, my_model, split='val'):
             pred_ratings[:, data[2]] = pred.cpu().detach().numpy().squeeze()
 
     # Sort the pred_ratings by corresponding SID order, using the data2sid
-    data2sid = DatasetAttributes.data2sid
+    data2sid = my_dataset_eval.datapoint2sid
     pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     # Load playcount data
