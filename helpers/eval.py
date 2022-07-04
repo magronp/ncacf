@@ -35,25 +35,32 @@ def evaluate_mf_hybrid_cold(params, W, my_model, split='val'):
     path_tp_eval = os.path.join(params['data_dir'], split + '_tp.num.csv')
 
     # Get the number of users and songs in the eval set as well as the dataset for evaluation
+    """ 
     n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
     n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
     if split == 'val':
         n_songs = int(0.2 * n_songs_total)
     else:
         n_songs = int(np.ceil(0.1 * 0.8 * n_songs_total))
+    """
 
     # Predict the attributes and ratings
     # Define a data loader
-    my_dataset = DatasetAttributes(wmf_path=None, features_path=path_features)
-    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=False, drop_last=False)
+    my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
+    my_dataloader = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
+
+    # Get the number of users and songs
+    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
+    n_songs = my_dataset_eval.n_songs
 
     pred_attributes = predict_attributes(my_model, my_dataloader, n_songs, params['n_embeddings'], params['device'])
     pred_ratings = W.dot(pred_attributes.T)
 
     # Load the evaluation subset true ratings
-    eval_data, rows_eval, cols_eval, _ = load_tp_data(path_tp_eval, setting='cold')
-    cols_eval -= cols_eval.min()
-    eval_data = sparse.csr_matrix((eval_data.data, (rows_eval, cols_eval)), dtype=np.int16, shape=(n_users, n_songs))
+    #eval_data, rows_eval, cols_eval, _ = load_tp_data(path_tp_eval, setting='cold')
+    #cols_eval -= cols_eval.min()
+    #eval_data = sparse.csr_matrix((eval_data.data, (rows_eval, cols_eval)), dtype=np.int16, shape=(n_users, n_songs))
+    eval_data = load_tp_data(path_tp_eval, setting='cold')[0]
 
     # Get the score
     ndcg_mean = my_ndcg_cold(eval_data, pred_ratings, k=50)
@@ -63,19 +70,22 @@ def evaluate_mf_hybrid_cold(params, W, my_model, split='val'):
 
 def evaluate_mf_hybrid_warm(params, W, H, my_model, variant='relaxed', split='val'):
 
-    # Get the number of users and songs in the eval set as well as the dataset for evaluation
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-
     # The attributes need to be predicted only for the 'strict' variant (since there is no H)
     if variant == 'strict':
         # Feature path - data loader
         path_features = os.path.join(params['data_dir'], 'feats.num.csv')
         my_dataset = DatasetAttributes(wmf_path=None, features_path=path_features)
         my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=False, drop_last=False)
+
         # Predict attributes and binary playcounts
-        pred_attributes = predict_attributes(my_model, my_dataloader, n_songs_total, params['n_embeddings'], params['device'])
+        n_songs = my_dataset.n_songs
+        pred_attributes = predict_attributes(my_model, my_dataloader, n_songs, params['n_embeddings'], params['device'])
         pred_ratings = W.dot(pred_attributes.T)
+
+        # Sort the pred_ratings by corresponding SID order, using the data2sid
+        data2sid = my_dataset.datapoint2sid
+        pred_ratings = pred_ratings[:, data2sid.argsort()]
+
     else:
         pred_ratings = W.dot(H.T)
 
