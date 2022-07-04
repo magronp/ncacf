@@ -5,6 +5,7 @@ __docformat__ = 'reStructuredText'
 
 from helpers.plotters import plot_val_ndcg_ncacf, plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 import numpy as np
+import pandas as pd
 
 
 # MF Hybrid validation results - impact of lambda
@@ -63,6 +64,13 @@ plot_val_ndcg_ncacf()
 
 
 # Test results
-
+model_list = ['wmf', 'dcb', 'cdl', 'dcue', 'cccfnet', 'ncf', 'ncacf']
+setting_list = ['warm', 'cold']
+res = pd.read_csv('outputs/test_results.csv')
+for setting in setting_list:
+    print('----', setting, '----')
+    for model in model_list:
+        df = res.loc[(res['Model'] == model) & (res['Setting'] == setting)]['NDCG']
+        print(model, '---- mean:',  round(df.mean()*100, 1), ' --- std:', round(df.std()*100, 1))
 
 # EOF
