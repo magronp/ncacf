@@ -158,7 +158,7 @@ def split_cold(data_dir='data/', n_splits=10, seed=125):
         for line in f:
             unique_sid.append(line.strip())
 
-    np.random.shuffle(unique_sid)
+    #np.random.shuffle(unique_sid)
 
     # Select 20% of the songs as held-out validation data
     n_songs = len(unique_sid)

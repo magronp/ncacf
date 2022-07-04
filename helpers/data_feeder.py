@@ -47,7 +47,10 @@ class DatasetAttributes(Dataset):
         # Acoustic content features
         features = pd.read_csv(features_path).to_numpy()
         # Sort according to the SID to ensure consistent feature/TP
-        features = features[features[:, 0].argsort()]
+        #features = features[features[:, 0].argsort()]
+        #x = np.delete(features, 0, axis=1)
+        self.datapoint2sid = features[:, 0]
+        # And now remove the SID colmn
         x = np.delete(features, 0, axis=1)
 
         # WMF song attributes: check if the song is none
@@ -57,6 +60,10 @@ class DatasetAttributes(Dataset):
             h = np.load(wmf_path)['H']
         self.x = torch.Tensor(x).float()
         self.h = torch.Tensor(h).float()
+
+        # Store the number of users and songs in the current subset
+        self.n_users = len(np.unique(self.tp_data['uid']))
+        self.n_songs = len(np.unique(self.tp_data['sid']))
 
     def __len__(self):
         return self.x.size()[0]
@@ -71,25 +78,28 @@ class DatasetPlaycounts(Dataset):
 
         # Acoustic content features
         features = pd.read_csv(features_path).to_numpy()
-        # The first column is the (num) SID, so sort by it
-        features = features[features[:, 0].argsort()]
-        # Remove the SID colmn: now the songs are indexed from 0 to n_songs-1
+        # The first column is the (num) SID, so keep it as a mapping between data point and sid
+        self.datapoint2sid = features[:, 0]
+        #features = features[features[:, 0].argsort()]
+        # And now remove the SID colmn
         x = np.delete(features, 0, axis=1)
         self.x = torch.tensor(x).float()
 
         # TP data
         self.tp_data = pd.read_csv(tp_path)
         # Also need to care about SIDs, as for cold-start these do not match: we want them to range from 0 to n_songs-1
-        self.tp_data['sid'] -= self.tp_data['sid'].min()
+        #self.tp_data['sid'] -= self.tp_data['sid'].min()
 
-        # Store the number of users in the dataset
+        # Store the number of users and songs in the current subset
         self.n_users = len(np.unique(self.tp_data['uid']))
+        self.n_songs = len(np.unique(self.tp_data['sid']))
 
     def __len__(self):
-        return self.x.__len__()
+        return self.n_songs
 
     def __getitem__(self, data_point):
-        u_pos = torch.tensor(self.tp_data[self.tp_data['sid'] == data_point]['uid'].to_numpy(), dtype=torch.long)
+        data_sid = self.datapoint2sid[data_point]
+        u_pos = torch.tensor(self.tp_data[self.tp_data['sid'] == data_sid]['uid'].to_numpy(), dtype=torch.long)
         u_counts = torch.zeros(self.n_users)
         u_counts[u_pos] = 1
         return self.x[data_point, :], u_counts, data_point
