@@ -143,7 +143,7 @@ def update_tp_record(data_dir='data/', seed=12345):
     return
 
 
-def split_cold(data_dir='data/', n_splits=10, seed=12345):
+def split_cold(data_dir='data/', n_splits=10, seed=125):
 
     # Set random seed for reproducibility
     np.random.seed(seed)
