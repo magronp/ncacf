@@ -47,7 +47,7 @@ class DatasetAttributes(Dataset):
         # Acoustic content features
         features = pd.read_csv(features_path).to_numpy()
         # Sort according to the SID to ensure consistent feature/TP
-        #features = features[features[:, 0].argsort()]
+        features = features[features[:, 0].argsort()]
         #x = np.delete(features, 0, axis=1)
         self.datapoint2sid = features[:, 0]
         # And now remove the SID colmn
@@ -79,7 +79,7 @@ class DatasetPlaycounts(Dataset):
         features = pd.read_csv(features_path).to_numpy()
         # The first column is the (num) SID, so keep it as a mapping between data point and sid
         self.datapoint2sid = features[:, 0]
-        #features = features[features[:, 0].argsort()]
+        features = features[features[:, 0].argsort()]
         # And now remove the SID colmn
         x = np.delete(features, 0, axis=1)
         self.x = torch.tensor(x).float()
