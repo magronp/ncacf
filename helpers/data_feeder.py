@@ -46,18 +46,22 @@ class DatasetAttributes(Dataset):
 
         # Acoustic content features
         features = pd.read_csv(features_path).to_numpy()
-        # Sort according to the SID to ensure consistent feature/TP
+
+        # Sort along the first col (list of SID) to have them in ascending order (it corresponds to the csv data)
         features = features[features[:, 0].argsort()]
-        #x = np.delete(features, 0, axis=1)
+
+        # The first column is the (num) SID, so keep it as a mapping between data point and sid
         self.datapoint2sid = features[:, 0]
+
         # And now remove the SID colmn
         x = np.delete(features, 0, axis=1)
 
-        # WMF song attributes: check if the song is none
+        # WMF song attributes (no need to sort since it is computed from the .csv data, so it's already ordered)
         if wmf_path is None:
             h = x
         else:
             h = np.load(wmf_path)['H']
+
         self.x = torch.Tensor(x).float()
         self.h = torch.Tensor(h).float()
 
@@ -77,17 +81,19 @@ class DatasetPlaycounts(Dataset):
 
         # Acoustic content features
         features = pd.read_csv(features_path).to_numpy()
-        # The first column is the (num) SID, so keep it as a mapping between data point and sid
+
+        # Sort along the first col (list of SID) to have them in ascending order (it corresponds to the csv data)
         features = features[features[:, 0].argsort()]
+
+        # The first column is the (num) SID, so keep it as a mapping between data point and sid
         self.datapoint2sid = features[:, 0]
+
         # And now remove the SID colmn
         x = np.delete(features, 0, axis=1)
         self.x = torch.tensor(x).float()
 
         # TP data
         self.tp_data = pd.read_csv(tp_path)
-        # Also need to care about SIDs, as for cold-start these do not match: we want them to range from 0 to n_songs-1
-        #self.tp_data['sid'] -= self.tp_data['sid'].min()
 
         # Store the number of users and songs in the current subset
         self.n_users = len(np.unique(self.tp_data['uid']))
