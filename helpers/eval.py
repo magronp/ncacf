@@ -7,7 +7,6 @@ import torch
 from tqdm import tqdm
 import numpy as np
 import os
-from scipy import sparse
 from helpers.utils import my_ndcg_cold, my_ndcg_in
 from helpers.data_feeder import load_tp_data, DatasetAttributes
 from torch.utils.data import DataLoader
@@ -34,17 +33,6 @@ def evaluate_mf_hybrid_cold(params, W, my_model, split='val'):
     path_features = os.path.join(params['data_dir'], split + '_feats.num.csv')
     path_tp_eval = os.path.join(params['data_dir'], split + '_tp.num.csv')
 
-    # Get the number of users and songs in the eval set as well as the dataset for evaluation
-    """ 
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    if split == 'val':
-        n_songs = int(0.2 * n_songs_total)
-    else:
-        n_songs = int(np.ceil(0.1 * 0.8 * n_songs_total))
-    """
-
-    # Predict the attributes and ratings
     # Define a data loader
     my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
     my_dataloader_eval = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
@@ -59,9 +47,6 @@ def evaluate_mf_hybrid_cold(params, W, my_model, split='val'):
     pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     # Load the evaluation subset true ratings
-    #eval_data, rows_eval, cols_eval, _ = load_tp_data(path_tp_eval, setting='cold')
-    #cols_eval -= cols_eval.min()
-    #eval_data = sparse.csr_matrix((eval_data.data, (rows_eval, cols_eval)), dtype=np.int16, shape=(n_users, n_songs))
     eval_data = load_tp_data(path_tp_eval, setting='cold')[0]
 
     # Get the score
@@ -120,16 +105,7 @@ def evaluate_uni_cold(params, my_model, split='val'):
     # Paths for features and TP
     path_features = os.path.join(params['data_dir'], split + '_feats.num.csv')
     tp_path = os.path.join(params['data_dir'], split + '_tp.num.csv')
-    """
-    # Get the number of users and songs in the eval set as well as the dataset for evaluation
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
-    if split == 'val':
-        n_songs = int(0.2 * n_songs_total)
-    else:
-        n_songs = int(np.ceil(0.1 * 0.8 * n_songs_total))
-    """
-    # Predict the attributes and ratings
+
     # Define a data loader
     my_dataset_eval = DatasetAttributes(wmf_path=None, features_path=path_features)
     my_dataloader_eval = DataLoader(my_dataset_eval, params['batch_size'], shuffle=False, drop_last=False)
@@ -162,9 +138,6 @@ def evaluate_uni_cold(params, my_model, split='val'):
 
 
 def evaluate_uni_warm(params, my_model, split='val'):
-
-    n_users = len(open(params['data_dir'] + 'unique_uid.txt').readlines())
-    #n_songs_total = len(open(params['data_dir'] + 'unique_sid.txt').readlines())
 
     # Paths for features
     path_features = os.path.join(params['data_dir'], 'feats.num.csv')

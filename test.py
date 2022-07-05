@@ -187,8 +187,6 @@ if __name__ == '__main__':
     # Set parameters
     params = {'batch_size': 128,
               'n_embeddings': 128,
-              'n_iter_wmf': 30,
-              'n_epochs': 150,
               'lr': 1e-4,
               'n_features_hidden': 1024,
               'n_features_in': 168,
@@ -223,25 +221,29 @@ if __name__ == '__main__':
         for setting in setting_list:
             for k_split in split_list:
                 print('Model : ' + model + ' ------ Setting : ' + setting + ' ------ Split : ' + str(k_split))
-                rec_testndcg = True
+                rec_testndcg, testndcg = True, None
 
                 if model == 'wmf':
                     if setting == 'warm':
-                        params['n_epochs'] = 150
+                        params['n_iter_wmf'] = 30
                         testndcg = train_test_wmf(params, k_split, data_dir=data_dir)
                     else:
                         rec_testndcg = False
 
                 elif model == 'dcb':
+                    params['n_iter_wmf'] = 30
                     params['n_epochs'] = 150
-                    testndcg_w = train_test_2stages(params, setting, 'strict', k_split, data_dir=data_dir)
+                    if setting == 'warm':
+                        testndcg = train_test_2stages(params, setting, 'strict', k_split, data_dir=data_dir)
+                    else:
+                        testndcg = train_test_2stages(params, setting, 'relaxed', k_split, data_dir=data_dir)
 
                 elif model == 'cdl':
                     if setting == 'cold':
                         params['n_epochs'] = 150
                     else:
                         params['n_epochs'] = 50
-                    testndcg_w = train_test_mfhybrid(params, setting, 'relaxed', k_split, data_dir=data_dir)
+                    testndcg = train_test_mfhybrid(params, setting, 'relaxed', k_split, data_dir=data_dir)
 
                 elif model == 'dcue':
                     params['n_epochs'] = 150
