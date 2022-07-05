@@ -270,6 +270,6 @@ if __name__ == '__main__':
 
                 # Append the test results to the csv file
                 if rec_testndcg:
-                    df = pd.DataFrame({'Setting': [model], 'Model': [setting], 'Split': [k_split], 'NDCG': [testndcg]})
+                    df = pd.DataFrame({'Setting': [setting], 'Model': [model], 'Split': [k_split], 'NDCG': [testndcg]})
                     df.to_csv(path_res, mode='a', index=False, header=False)
 # EOF
