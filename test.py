@@ -77,17 +77,18 @@ def train_test_mfhybrid(params, setting, variant, k_split, data_dir='data/'):
         params['lW'], params['lH'] = lamda_opt['lW'], lamda_opt['lH']
     else:
         if setting == 'warm' and variant == 'relaxed':
-            params['lW'], params['lH'] = 1000, 10
+            params['lW'], params['lH'] = 1000, 10.
         elif setting == 'warm' and variant == 'strict':
-            params['lW'], params['lH'] = 0.1, 0
+            params['lW'], params['lH'] = 0.1, 0.
         elif setting == 'cold' and variant == 'relaxed':
-            params['lW'], params['lH'] = 0.1, 10
+            params['lW'], params['lH'] = 0.1, 10.
         elif setting == 'cold' and variant == 'strict':
-            params['lW'], params['lH'] = 0.01, 0
+            params['lW'], params['lH'] = 0.01, 0.
 
     # Train and test
     params['out_dir'] = 'outputs/temp/'
     params['n_ep_it'] = 1
+    print(params['lW'], params['lH'], variant, setting)
     model_opt, W, H, _ = train_mf_hybrid(params, variant=variant, setting=setting, rec_model=False)
     test_ndcg = evaluate_mf_hybrid(params, W, H, model_opt, setting=setting, variant=variant, split='test')
     return test_ndcg
