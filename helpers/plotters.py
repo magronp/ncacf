@@ -4,10 +4,10 @@ __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
 import numpy as np
-from matplotlib import pyplot as plt
-#import matplotlib
-#matplotlib.use("TkAgg")
-#import matplotlib.pyplot as plt
+#from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 
 
 def plot_val_ndcg_lW_lH(path_current):
@@ -106,8 +106,8 @@ def plot_val_ndcg_ncf():
 
 def plot_val_ndcg_ncacf():
 
-    val_ndcg_warm = np.load('outputs/warm/ncacf/val_results.npz')['val_ndcg'][:, :-1, :]
-    val_ndcg_cold = np.load('outputs/cold/ncacf/val_results.npz')['val_ndcg'][:, :-1, :]
+    val_ndcg_warm = np.load('outputs/warm/ncacf/val_results.npz')['val_ndcg'][:, 1:, :]
+    val_ndcg_cold = np.load('outputs/cold/ncacf/val_results.npz')['val_ndcg'][:, 1:, :]
 
     plt.figure(0)
     plt.subplot(2, 2, 1)

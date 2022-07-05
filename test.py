@@ -135,7 +135,7 @@ def train_test_ncf(params, k_split, data_dir='data/'):
         ni_dl, inter = int(hyper_opt['nl_di']), hyper_opt['inter']
     else:
         params['lW'], params['lH'] = 0.1, 0.1
-        ni_dl, inter = 2, 'mult'
+        ni_dl, inter = 3, 'mult'
 
     # Train and test
     params['out_dir'] = 'outputs/temp/ncf/'
@@ -223,12 +223,14 @@ if __name__ == '__main__':
         for setting in setting_list:
             for k_split in split_list:
                 print('Model : ' + model + ' ------ Setting : ' + setting + ' ------ Split : ' + str(k_split))
-                testndcg = None
+                rec_testndcg = True
 
                 if model == 'wmf':
                     if setting == 'warm':
                         params['n_epochs'] = 150
                         testndcg = train_test_wmf(params, k_split, data_dir=data_dir)
+                    else:
+                        rec_testndcg = False
 
                 elif model == 'dcb':
                     params['n_epochs'] = 150
@@ -253,13 +255,18 @@ if __name__ == '__main__':
                     if setting == 'warm':
                         params['n_epochs'] = 100
                         testndcg = train_test_ncf(params, k_split, data_dir=data_dir)
+                    else:
+                        rec_testndcg = False
 
                 elif model == 'ncacf':
                     params['n_epochs'] = 100
                     testndcg = train_test_ncacf(params, setting, k_split, data_dir=data_dir)
 
+                else:
+                    rec_testndcg = False
+
                 # Append the test results to the csv file
-                if not(setting == 'cold' and (model == 'wmf' or model == 'ncf')):
+                if rec_testndcg:
                     df = pd.DataFrame({'Setting': [model], 'Model': [setting], 'Split': [k_split], 'NDCG': [testndcg]})
                     df.to_csv(path_res, mode='a', index=False, header=False)
 # EOF
