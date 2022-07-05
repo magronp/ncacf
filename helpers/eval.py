@@ -43,8 +43,8 @@ def evaluate_mf_hybrid_cold(params, W, my_model, split='val'):
     pred_ratings = W.dot(pred_attributes.T)
 
     # Sort the pred_ratings by corresponding SID order, using the data2sid
-    data2sid = my_dataset_eval.datapoint2sid
-    pred_ratings = pred_ratings[:, data2sid.argsort()]
+    #data2sid = my_dataset_eval.datapoint2sid
+    #pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     # Load the evaluation subset true ratings
     eval_data = load_tp_data(path_tp_eval, setting='cold')[0]
@@ -70,8 +70,8 @@ def evaluate_mf_hybrid_warm(params, W, H, my_model, variant='relaxed', split='va
         pred_ratings = W.dot(pred_attributes.T)
 
         # Sort the pred_ratings by corresponding SID order, using the data2sid
-        data2sid = my_dataset_eval.datapoint2sid
-        pred_ratings = pred_ratings[:, data2sid.argsort()]
+        #data2sid = my_dataset_eval.datapoint2sid
+        #pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     else:
         pred_ratings = W.dot(H.T)
@@ -125,8 +125,8 @@ def evaluate_uni_cold(params, my_model, split='val'):
             pred_ratings[:, data[2]] = pred.cpu().detach().numpy().squeeze()
 
     # Sort the pred_ratings by corresponding SID order, using the data2sid
-    data2sid = my_dataset_eval.datapoint2sid
-    pred_ratings = pred_ratings[:, data2sid.argsort()]
+    #data2sid = my_dataset_eval.datapoint2sid
+    #pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     # Load the evaluation subset true ratings
     eval_data = load_tp_data(tp_path, setting='cold')[0]
@@ -161,8 +161,8 @@ def evaluate_uni_warm(params, my_model, split='val'):
             pred_ratings[:, data[2]] = pred.cpu().detach().numpy().squeeze()
 
     # Sort the pred_ratings by corresponding SID order, using the data2sid
-    data2sid = my_dataset_eval.datapoint2sid
-    pred_ratings = pred_ratings[:, data2sid.argsort()]
+    #data2sid = my_dataset_eval.datapoint2sid
+    #pred_ratings = pred_ratings[:, data2sid.argsort()]
 
     # Load playcount data
     train_data = load_tp_data(os.path.join(params['data_dir'], 'train_tp.num.csv'), setting='warm')[0]
