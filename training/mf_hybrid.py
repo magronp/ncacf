@@ -176,8 +176,8 @@ def train_mf_hybrid_strict(params, setting, rec_model=True, seed=1234):
         # Update the MF model every ep_it epochs
         if ep % params['n_ep_it'] == 0:
             #  Predict the content attributes using the deep model and update the WMF factors
-            predicted_attributes = predict_attributes(my_model, my_dataloader_attr, n_songs_train, params['n_embeddings'],
-                                                      params['device'])
+            predicted_attributes = predict_attributes(my_model, my_dataloader_attr, n_songs_train,
+                                                      params['n_embeddings'], params['device'])
             W = compute_factor_wmf_deep(predicted_attributes, conf, lW)
 
         # Model update
