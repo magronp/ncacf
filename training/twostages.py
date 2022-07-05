@@ -82,7 +82,7 @@ def train_2stages_relaxed(params, setting, rec_model=True, seed=1234):
 
     # Define the dataset and loader
     my_dataset = DatasetAttributes(wmf_path=path_wmf, features_path=path_features)
-    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
+    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=False)
 
     # Optimizer
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
@@ -160,7 +160,7 @@ def train_2stages_strict(params, setting, rec_model=True, seed=1234):
 
     # Dataset
     my_dataset = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
-    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
+    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=False)
 
     # Optimizer
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
