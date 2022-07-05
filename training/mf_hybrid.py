@@ -54,7 +54,7 @@ def train_mf_hybrid_relaxed(params, setting, rec_model=True, seed=1234):
 
     # Define the dataset and loader
     my_dataset = DatasetAttributes(wmf_path=path_wmf_temp, features_path=path_features)
-    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
+    my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=False)
 
     # Optimizer
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
@@ -83,7 +83,7 @@ def train_mf_hybrid_relaxed(params, setting, rec_model=True, seed=1234):
             # Save the MF parameters and define the dataset for training the attribute model
             np.savez(path_wmf_temp, W=W, H=H)
             my_dataset = DatasetAttributes(wmf_path=path_wmf_temp, features_path=path_features)
-            my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=True)
+            my_dataloader = DataLoader(my_dataset, params['batch_size'], shuffle=True, drop_last=False)
 
         # Attribute model update
         epoch_losses = []
@@ -155,7 +155,7 @@ def train_mf_hybrid_strict(params, setting, rec_model=True, seed=1234):
 
     # Define the dataset
     my_dataset_tr = DatasetPlaycounts(features_path=path_features, tp_path=path_tp_train)
-    my_dataloader_tr = DataLoader(my_dataset_tr, params['batch_size'], shuffle=True, drop_last=True)
+    my_dataloader_tr = DataLoader(my_dataset_tr, params['batch_size'], shuffle=True, drop_last=False)
 
     # Training setup
     my_optimizer = Adam(params=my_model.parameters(), lr=params['lr'])
