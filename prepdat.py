@@ -334,23 +334,24 @@ if __name__ == '__main__':
     MIN_USER_COUNT, MIN_SONG_COUNT, MIN_COUNT = 20, 50, 7
     data_dir = 'data/'
     n_splits = 10
+    seed = 12345
 
     # Load the TP data and filter out inactive data
-    #load_filter_record_tp(data_dir, min_uc=MIN_USER_COUNT, min_sc=MIN_SONG_COUNT, min_c=MIN_COUNT)
+    load_filter_record_tp(data_dir, min_uc=MIN_USER_COUNT, min_sc=MIN_SONG_COUNT, min_c=MIN_COUNT)
 
     # Process the song features
-    #load_record_features(data_dir)
+    load_record_features(data_dir)
 
     # Update the TP songs (to keep only those for which there are available features), and print the density level
-    #update_tp_record(data_dir)
-    #density_level = print_density_level(data_dir)
+    update_tp_record(data_dir, seed=seed)
+    density_level = print_density_level(data_dir)
 
     # Create the various splits (and numerize files) for the cold-start scenario
-    split_cold(data_dir=data_dir, n_splits=n_splits)
+    split_cold(data_dir=data_dir, n_splits=n_splits, seed=seed)
     numerize_cold(data_dir=data_dir, n_splits=n_splits)
 
     # Same for the warm-start scenario
-    #split_warm(data_dir=data_dir, n_splits=n_splits)
-    #numerize_warm(data_dir=data_dir, n_splits=n_splits)
+    split_warm(data_dir=data_dir, n_splits=n_splits, seed=seed)
+    numerize_warm(data_dir=data_dir, n_splits=n_splits)
 
 # EOF
