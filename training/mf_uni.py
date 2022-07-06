@@ -108,7 +108,7 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
 def train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir='data/'):
 
     for setting in setting_list:
-        # Define the dataset and output path depending on if it's in/out task
+        # Define the dataset and output path
         path_current = 'outputs/' + setting + '/mf_uni/'
         params['data_dir'] = data_dir + setting + '/split0/'
 

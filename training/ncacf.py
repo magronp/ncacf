@@ -106,52 +106,33 @@ def train_ncacf(params, path_pretrain=None, n_layers_di=2, setting='cold', varia
     return model_opt
 
 
-def train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir='data/'):
-
-    val_lambda = not(len(range_lW) == 1 and len(range_lH) == 1)
+def train_val_ncacf(setting_list, variant_list, params, range_inter, range_nl_di, data_dir='data/'):
 
     for setting in setting_list:
-        params['data_dir'] = data_dir + setting + '/split0/'
         for inter in range_inter:
             for nl_di in range_nl_di:
-                path_current = 'outputs/' + setting + '/ncacf/' + inter + '/' + str(nl_di) + '/'
-
                 for variant in variant_list:
                     print('NCACF -- Setting: ' + setting + ' -  Inter: ' + inter + ' - N_layers: ' + str(
                         nl_di) + ' - Variant: ' + variant)
+
+                    # Define the data and output directories, and the path for pretraining
+                    params['data_dir'] = data_dir + setting + '/split0/'
+                    params['out_dir'] = 'outputs/' + setting + '/ncacf/' + inter + '/' + str(
+                        nl_di) + '/' + variant + '/'
                     if nl_di == -1:
                         path_pretrain = None
                     else:
                         path_pretrain = 'outputs/' + setting + '/ncacf/' + inter + '/' + str(-1) + '/' + variant + '/'
-                    # Grid search on the hyperparameters
-                    if val_lambda:
-                        if variant == 'relaxed':
-                            for lW in range_lW:
-                                for lH in range_lH:
-                                    print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
-                                    params['lW'], params['lH'] = lW, lH
-                                    params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
-                                    create_folder(params['out_dir'])
-                                    train_ncacf(params, path_pretrain=path_pretrain, n_layers_di=nl_di, setting=setting,
-                                                variant=variant, inter=inter)
-                            get_optimal_val_model_lW_lH(path_current + 'relaxed/', range_lW, range_lH,
-                                                        params['n_epochs'])
-                        else:
-                            for lW in range_lW:
-                                print('lambda_W=' + str(lW))
-                                params['lW'], params['lH'] = lW, 0.
-                                params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
-                                create_folder(params['out_dir'])
-                                train_ncacf(params, path_pretrain=path_pretrain, n_layers_di=nl_di, setting=setting,
-                                            variant=variant, inter=inter)
-                            get_optimal_val_model_lW(path_current + 'strict/', range_lW, params['n_epochs'])
-                    else:
-                        params['lW'], params['lH'] = range_lW[0], range_lH[0]
-                        params['out_dir'] = path_current + variant + '/'
-                        create_folder(params['out_dir'])
-                        train_ncacf(params, path_pretrain=path_pretrain, n_layers_di=nl_di, setting=setting,
-                                    variant=variant, inter=inter)
-                        np.savez(params['out_dir'] + 'hyperparams.npz', lW=params['lW'], lH=params['lH'])
+
+                    # Hyperparameters
+                    lamda_opt = np.load('outputs/' + setting + '/mf_uni/' + variant + '/hyperparams.npz')
+                    params['lW'], params['lH'] = float(lamda_opt['lW']), float(lamda_opt['lH'])
+
+                    # Training (and record the hyperparameters)
+                    create_folder(params['out_dir'])
+                    train_ncacf(params, path_pretrain=path_pretrain, n_layers_di=nl_di, setting=setting,
+                                variant=variant, inter=inter)
+                    np.savez(params['out_dir'] + 'hyperparams.npz', lW=params['lW'], lH=params['lH'])
     return
 
 
@@ -207,12 +188,11 @@ if __name__ == '__main__':
     setting_list = ['warm', 'cold']
     variant_list = ['relaxed', 'strict']
 
-    # Define the hyperparameters over which performing a grid search
-    range_lW, range_lH = [0.1], [0.1]
+    # Define the hyperparameters over which validate
     range_inter, range_nl_di = ['mult', 'conc'], [-1, 0, 1, 2, 3, 4, 5]
 
     # Training with validation
-    train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, range_inter, range_nl_di, data_dir=data_dir)
+    train_val_ncacf(setting_list, variant_list, params, range_inter, range_nl_di, data_dir=data_dir)
     get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
 
     # Plot validation results
