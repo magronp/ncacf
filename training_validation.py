@@ -66,8 +66,11 @@ if __name__ == '__main__':
         # MF-Hybrid models - training with validation, and check the impact of N_GD
         elif model == 'mf_hybrid':
             params['n_epochs'] = 150
-            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            variant_list = ['strict']
+            range_lW, range_lH = [1000], [0.001, 0.01, 0.1, 1, 10, 100]
             train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            variant_list = ['relaxed', 'strict']
+            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
             get_optimal_val_model_lambda('mf_hybrid', setting_list, variant_list, params['n_epochs'], range_lW,
                                          range_lH)
             n_ep_it_list = [2, 5, 10]
