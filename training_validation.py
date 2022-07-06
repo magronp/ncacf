@@ -54,8 +54,12 @@ if __name__ == '__main__':
         if model == 'twostages':
             params['n_iter_wmf'] = 30
             params['n_epochs'] = 150
-            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            range_lW, range_lH = [10], [1, 10, 100]
             train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            range_lW, range_lH = [100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
+            train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            setting_list = ['warm', 'cold']
+            range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
             get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
             get_optimal_wmf(params, range_lW, range_lH)
 
