@@ -128,4 +128,25 @@ def plot_val_ndcg_ncacf():
 
     return
 
+
+def plot_val_mf_hybrid_epiter(setting, variant, n_epochs, n_ep_it_list):
+
+    # Load the validation NDCGs
+    val_ndcg_epit = np.zeros((len(n_ep_it_list), n_epochs))
+    for inep, n_ep_it in enumerate(n_ep_it_list):
+        if n_ep_it == 1:
+            path_ep = 'outputs/' + setting + '/mf_hybrid/' + variant + '/'
+        else:
+            path_ep = 'outputs/' + setting + '/mf_hybrid/' + variant + '/gd_' + str(n_ep_it) + '/'
+        val_ndcg_epit[inep, :] = np.load(path_ep + 'training.npz')['val_ndcg'][:n_epochs] * 100
+
+    # Plot the validation NDCG
+    plt.figure()
+    plt.plot(np.arange(n_epochs) + 1, val_ndcg_epit.T)
+    plt.xlabel('Epochs')
+    plt.ylabel('NDCG (%)')
+    plt.legend(['$N_{gd}=1$', '$N_{gd}=2$', '$N_{gd}=5$'])
+
+    return
+
 # EOF

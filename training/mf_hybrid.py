@@ -3,9 +3,6 @@
 __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
-from helpers.utils import create_folder, get_optimal_val_model_lambda
-from helpers.plotters import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
-from matplotlib import pyplot as plt
 import numpy as np
 import os
 import time
@@ -18,6 +15,8 @@ from helpers.data_feeder import load_tp_data, DatasetAttributes, DatasetPlaycoun
 from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict
 from helpers.models import ModelAttributes
 from helpers.eval import evaluate_mf_hybrid, predict_attributes
+from helpers.utils import create_folder, get_optimal_val_model_lambda
+from helpers.plotters import plot_val_ndcg_lW_lH, plot_val_ndcg_lW, plot_val_mf_hybrid_epiter
 import copy
 
 
@@ -234,10 +233,8 @@ def train_mf_hybrid(params, variant, setting, rec_model=True):
 
 def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir='data/'):
 
-    # In this case, set N_gd at 1
+    # For validation over lambda, set N_gd at 1
     params['n_ep_it'] = 1
-    # Check if this is a validation scenario: if more than 1 value is given for lW / lH
-    val_b = not(len(range_lW) == 1 and len(range_lH) == 1)
 
     for setting in setting_list:
         # Define the dataset and output path depending on if it's in/out task
@@ -245,31 +242,23 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
         params['data_dir'] = data_dir + setting + '/split0/'
 
         for variant in variant_list:
-            if val_b:
-                if variant == 'relaxed':
-                    for lW in range_lW:
-                        for lH in range_lH:
-                            print('Task: ' + setting + ' -  Variant: ' + variant)
-                            print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
-                            params['lW'], params['lH'] = lW, lH
-                            params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
-                            create_folder(params['out_dir'])
-                            train_mf_hybrid(params, variant=variant, setting=setting)
-                else:
-                    for lW in range_lW:
-                        print('Task: ' + setting + ' -  Variant: ' + variant)
-                        print('lambda_W=' + str(lW))
-                        params['lW'], params['lH'] = lW, 0.
-                        params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
+            print('MF-Hybrid -- Setting: ' + setting + ' -  Variant: ' + variant)
+
+            if variant == 'relaxed':
+                for lW in range_lW:
+                    for lH in range_lH:
+                        print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
+                        params['lW'], params['lH'] = lW, lH
+                        params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
                         create_folder(params['out_dir'])
-                        train_mf_hybrid(params, variant='strict', setting=setting)
+                        train_mf_hybrid(params, variant=variant, setting=setting)
             else:
-                print('Task: ' + setting + ' -  Variant: ' + variant)
-                params['lW'], params['lH'] = range_lW[0], range_lH[0]
-                params['out_dir'] = path_current + variant + '/'
-                create_folder(params['out_dir'])
-                train_mf_hybrid(params, variant=variant, setting=setting)
-                np.savez( params['out_dir'] + 'hyperparams.npz', lW=params['lW'], lH=params['lH'])
+                for lW in range_lW:
+                    print('lambda_W=' + str(lW))
+                    params['lW'], params['lH'] = lW, 0.
+                    params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
+                    create_folder(params['out_dir'])
+                    train_mf_hybrid(params, variant='strict', setting=setting)
 
     return
 
@@ -280,39 +269,18 @@ def check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_d
         path_current = 'outputs/' + setting + '/mf_hybrid/'
         params['data_dir'] = data_dir + setting + '/split0/'
         for variant in variant_list:
+            print('MF-Hybrid -- Setting: ' + setting + ' -  Variant: ' + variant)
+
             # Load the optimal hyper-parameters
             lamb_load = np.load(path_current + variant + '/hyperparams.npz')
             params['lW'], params['lH'] = lamb_load['lW'], lamb_load['lH']
             # Try other ep_it
             for n_ep_it in n_ep_it_list:
-                print('Task: ' + setting + ' -  Variant: ' + variant)
                 print('N_GD=' + str(n_ep_it))
-                # Define the output directory
                 params['out_dir'] = path_current + variant + '/gd_' + str(n_ep_it) + '/'
                 create_folder(params['out_dir'])
                 params['n_ep_it'] = n_ep_it
                 train_mf_hybrid(params, variant=variant, setting=setting)
-
-    return
-
-
-def plot_val_mf_hybrid_epiter(setting, variant, n_epochs, n_ep_it_list):
-
-    # Load the validation NDCGs
-    val_ndcg_epit = np.zeros((len(n_ep_it_list), n_epochs))
-    for inep, n_ep_it in enumerate(n_ep_it_list):
-        if n_ep_it == 1:
-            path_ep = 'outputs/' + setting + '/mf_hybrid/' + variant + '/'
-        else:
-            path_ep = 'outputs/' + setting + '/mf_hybrid/' + variant + '/gd_' + str(n_ep_it) + '/'
-        val_ndcg_epit[inep, :] = np.load(path_ep + 'training.npz')['val_ndcg'][:n_epochs] * 100
-
-    # Plot the validation NDCG
-    plt.figure()
-    plt.plot(np.arange(n_epochs) + 1, val_ndcg_epit.T)
-    plt.xlabel('Epochs')
-    plt.ylabel('NDCG (%)')
-    plt.legend(['$N_{gd}=1$', '$N_{gd}=2$', '$N_{gd}=5$'])
 
     return
 
