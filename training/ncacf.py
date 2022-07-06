@@ -134,7 +134,8 @@ def train_val_ncacf(setting_list, variant_list, params, range_lW, range_lH, rang
                                     create_folder(params['out_dir'])
                                     train_ncacf(params, path_pretrain=path_pretrain, n_layers_di=nl_di, setting=setting,
                                                 variant=variant, inter=inter)
-                            get_optimal_val_model_lW_lH(path_current + 'relaxed/', range_lW, range_lH, params['n_epochs'])
+                            get_optimal_val_model_lW_lH(path_current + 'relaxed/', range_lW, range_lH,
+                                                        params['n_epochs'])
                         else:
                             for lW in range_lW:
                                 print('lambda_W=' + str(lW))

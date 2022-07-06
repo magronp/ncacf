@@ -5,7 +5,7 @@ __docformat__ = 'reStructuredText'
 
 from helpers.eval import evaluate_uni
 from helpers.models import ModelMFuni
-from helpers.utils import create_folder, wpe_joint, get_optimal_val_model_lW_lH, get_optimal_val_model_lW
+from helpers.utils import create_folder, wpe_joint, get_optimal_val_model_lambda
 from helpers.plotters import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 import numpy as np
 import os
@@ -107,42 +107,29 @@ def train_mf_uni(params, variant='relaxed', setting='cold', rec_model=True, seed
 
 def train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir='data/'):
 
-    # Check if this is a validation scenario: if more than 1 value is given for lW / lH
-    val_b = not(len(range_lW) == 1 and len(range_lH) == 1)
-
     for setting in setting_list:
         # Define the dataset and output path depending on if it's in/out task
         path_current = 'outputs/' + setting + '/mf_uni/'
         params['data_dir'] = data_dir + setting + '/split0/'
 
         for variant in variant_list:
-            if val_b:
-                if variant == 'relaxed':
-                    for lW in range_lW:
-                        for lH in range_lH:
-                            print('Task: ' + setting + ' -  Variant: ' + variant)
-                            print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
-                            params['lW'], params['lH'] = lW, lH
-                            params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
-                            create_folder(params['out_dir'])
-                            train_mf_uni(params, variant=variant, setting=setting)
-                    get_optimal_val_model_lW_lH(path_current + 'relaxed/', range_lW, range_lH, params['n_epochs'])
-                else:
-                    for lW in range_lW:
-                        print('MF-Uni -- Setting: ' + setting + ' -  Variant: ' + variant)
-                        print('lambda_W=' + str(lW))
-                        params['lW'], params['lH'] = lW, 0.
-                        params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
+            print('MF-Uni -- Setting: ' + setting + ' -  Variant: ' + variant)
+
+            if variant == 'relaxed':
+                for lW in range_lW:
+                    for lH in range_lH:
+                        print('lambda_W=' + str(lW) + ' - lambda_H=' + str(lH))
+                        params['lW'], params['lH'] = lW, lH
+                        params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
                         create_folder(params['out_dir'])
-                        train_mf_uni(params, variant='strict', setting=setting)
-                    get_optimal_val_model_lW(path_current + 'strict/', range_lW, params['n_epochs'])
+                        train_mf_uni(params, variant=variant, setting=setting)
             else:
-                print('Task: ' + setting + ' -  Variant: ' + variant)
-                params['lW'], params['lH'] = range_lW[0], range_lH[0]
-                params['out_dir'] = path_current + variant + '/'
-                create_folder(params['out_dir'])
-                train_mf_uni(params, variant=variant, setting=setting)
-                np.savez( params['out_dir'] + 'hyperparams.npz', lW=params['lW'], lH=params['lH'])
+                for lW in range_lW:
+                    print('lambda_W=' + str(lW))
+                    params['lW'], params['lH'] = lW, 0.
+                    params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
+                    create_folder(params['out_dir'])
+                    train_mf_uni(params, variant='strict', setting=setting)
 
     return
 
@@ -171,6 +158,9 @@ if __name__ == '__main__':
     # Training
     range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
     train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+
+    # Select the best performing model (both variants and scenarios)
+    get_optimal_val_model_lambda('mf_uni', setting_list, variant_list, params['n_epochs'], range_lW, range_lH)
 
     # Plot the validation loss as a function of the hyperparameters
     plot_val_ndcg_lW_lH('outputs/cold/mf_uni/relaxed/')

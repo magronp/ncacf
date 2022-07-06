@@ -10,6 +10,7 @@ from training.mf_hybrid import train_val_mf_hybrid, check_NGD_mf_hybrid
 from training.mf_uni import train_val_mf_uni
 from training.ncf import train_val_ncf, get_optimal_ncf
 from training.ncacf import train_val_ncacf, get_optimal_ncacf
+from helpers.utils import get_optimal_val_model_lambda
 
 
 if __name__ == '__main__':
@@ -63,14 +64,23 @@ if __name__ == '__main__':
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
             train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            get_optimal_val_model_lambda('mf_hybrid', setting_list, variant_list, params['n_epochs'], range_lW,
+                                         range_lH)
             n_ep_it_list = [2, 5, 10]
             check_NGD_mf_hybrid(setting_list, variant_list, n_ep_it_list, params, data_dir)
 
         # MF-Uni models - training with validation
         elif model == 'mf_uni':
             params['n_epochs'] = 150
+
+            variant_list, range_lW, range_lH = ['relaxed'], [10], [10]
+            train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+
+            variant_list = ['strict']
             range_lW, range_lH = [0.01, 0.1, 1, 10], [0.01, 0.1, 1, 10]
             train_val_mf_uni(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            get_optimal_val_model_lambda('mf_uni', setting_list, variant_list, params['n_epochs'], range_lW,
+                                         range_lH)
 
         # NCF baseline - training with validation (lambda, interaction model, and number of layers)
         elif model == 'ncf':

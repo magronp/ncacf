@@ -19,51 +19,66 @@ def create_folder(path):
     return
 
 
-def get_optimal_val_model_lW_lH(path_current, range_lW, range_lH, n_epochs):
+def get_optimal_val_model_lambda(model, setting_list, variant_list, n_epochs, range_lW, range_lH=None):
+
+    for setting in setting_list:
+        for variant in variant_list:
+            # Define the path where to perform validation
+            path_val = 'outputs/' + setting + '/' + model + '/' + variant + '/'
+
+            if variant == 'strict':
+                get_optimal_val_model_lW(path_val, range_lW, n_epochs)
+            else:
+                get_optimal_val_model_lW_lH(path_val, range_lW, range_lH, n_epochs)
+
+    return
+
+
+def get_optimal_val_model_lW_lH(path_val, range_lW, range_lH, n_epochs):
 
     # Load the validation score for the pretrained models
     Nw, Nh = len(range_lW), len(range_lH)
     val_ndcg = np.zeros((Nw, Nh, n_epochs))
     for iW, lW in enumerate(range_lW):
         for iH, lH in enumerate(range_lH):
-            path_ndcg = path_current + 'lW_' + str(lW) + '/lH_' + str(lH) + '/training.npz'
+            path_ndcg = path_val + 'lW_' + str(lW) + '/lH_' + str(lH) + '/training.npz'
             val_ndcg[iW, iH, :] = np.load(path_ndcg)['val_ndcg'][:n_epochs] * 100
 
     # Get the optimal hyperparameters
     ind_opt = np.unravel_index(np.argmax(val_ndcg, axis=None), val_ndcg.shape)
     lW_opt, lH_opt = range_lW[ind_opt[0]], range_lH[ind_opt[1]]
-    np.savez(path_current + 'hyperparams.npz', lW=lW_opt, lH=lH_opt)
-    np.savez(path_current + 'val_ndcg.npz', val_ndcg=val_ndcg, range_lW=range_lW, range_lH=range_lH)
+    np.savez(path_val + 'hyperparams.npz', lW=lW_opt, lH=lH_opt)
+    np.savez(path_val + 'val_ndcg.npz', val_ndcg=val_ndcg, range_lW=range_lW, range_lH=range_lH)
 
     # Get the optimal model / training log / (WMF) and copy it to the main parent folder
-    path_opt = path_current + 'lW_' + str(lW_opt)+ '/lH_' + str(lH_opt) + '/'
+    path_opt = path_val + 'lW_' + str(lW_opt) + '/lH_' + str(lH_opt) + '/'
     files_opt = os.listdir(path_opt)
     for f in files_opt:
-        shutil.copyfile(path_opt + f, path_current + f)
+        shutil.copyfile(path_opt + f, path_val + f)
 
     return
 
 
-def get_optimal_val_model_lW(path_current, range_lW, n_epochs):
+def get_optimal_val_model_lW(path_val, range_lW, n_epochs):
 
     # Load the validation score for the pretrained models
     Nw = len(range_lW)
     val_ndcg = np.zeros((Nw, n_epochs))
     for iW, lW in enumerate(range_lW):
-            path_ndcg = path_current + 'lW_' + str(lW) + '/training.npz'
+            path_ndcg = path_val + 'lW_' + str(lW) + '/training.npz'
             val_ndcg[iW, :] = np.load(path_ndcg)['val_ndcg'][:n_epochs] * 100
 
     # Get the optimal hyperparameters
     ind_opt = np.unravel_index(np.argmax(val_ndcg, axis=None), val_ndcg.shape)
     lW_opt = range_lW[ind_opt[0]]
-    np.savez(path_current + 'hyperparams.npz', lW=lW_opt, lH=0.)
-    np.savez(path_current + 'val_ndcg.npz', val_ndcg=val_ndcg, range_lW=range_lW)
+    np.savez(path_val + 'hyperparams.npz', lW=lW_opt, lH=0.)
+    np.savez(path_val + 'val_ndcg.npz', val_ndcg=val_ndcg, range_lW=range_lW)
 
     # Get the optimal model / training log / (WMF) and copy it to the main parent folder
-    path_opt = path_current + 'lW_' + str(lW_opt) + '/'
+    path_opt = path_val + 'lW_' + str(lW_opt) + '/'
     files_opt = os.listdir(path_opt)
     for f in files_opt:
-        shutil.copyfile(path_opt + f, path_current + f)
+        shutil.copyfile(path_opt + f, path_val + f)
 
     return
 

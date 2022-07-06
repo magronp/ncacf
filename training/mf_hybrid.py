@@ -3,7 +3,7 @@
 __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
-from helpers.utils import create_folder, get_optimal_val_model_lW_lH, get_optimal_val_model_lW
+from helpers.utils import create_folder, get_optimal_val_model_lambda
 from helpers.plotters import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
 from matplotlib import pyplot as plt
 import numpy as np
@@ -255,7 +255,6 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
                             params['out_dir'] = path_current + 'relaxed/lW_' + str(lW) + '/lH_' + str(lH) + '/'
                             create_folder(params['out_dir'])
                             train_mf_hybrid(params, variant=variant, setting=setting)
-                    get_optimal_val_model_lW_lH(path_current + 'relaxed/', range_lW, range_lH, params['n_epochs'])
                 else:
                     for lW in range_lW:
                         print('Task: ' + setting + ' -  Variant: ' + variant)
@@ -264,7 +263,6 @@ def train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, 
                         params['out_dir'] = path_current + 'strict/lW_' + str(lW) + '/'
                         create_folder(params['out_dir'])
                         train_mf_hybrid(params, variant='strict', setting=setting)
-                    get_optimal_val_model_lW(path_current + 'strict/', range_lW, params['n_epochs'])
             else:
                 print('Task: ' + setting + ' -  Variant: ' + variant)
                 params['lW'], params['lH'] = range_lW[0], range_lH[0]
@@ -342,8 +340,11 @@ if __name__ == '__main__':
     # Define the hyperparameters over which performing a grid search
     range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
     
-    # Train MF Hybrid models, and select the best performing model on the fly
+    # Train MF Hybrid models
     train_val_mf_hybrid(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+
+    # Select the best performing model (both variants and scenarios)
+    get_optimal_val_model_lambda('mf_hybrid', setting_list, variant_list, params['n_epochs'], range_lW, range_lH)
 
     # Check what happens if N_GD varies (more epochs at each iteration)
     n_ep_it_list = [2, 5, 10]
