@@ -109,11 +109,11 @@ def train_test_mfuni(params, setting, variant, k_split, data_dir='data/'):
         if setting == 'warm' and variant == 'relaxed':
             params['lW'], params['lH'] = 0.1, 1
         elif setting == 'warm' and variant == 'strict':
-            params['lW'], params['lH'] = 0.1, 0
+            params['lW'], params['lH'] = 0.01, 0
         elif setting == 'cold' and variant == 'relaxed':
-            params['lW'], params['lH'] = 0.1, 1
+            params['lW'], params['lH'] = 0.01, 10
         elif setting == 'cold' and variant == 'strict':
-            params['lW'], params['lH'] = 1, 0
+            params['lW'], params['lH'] = 0.1, 0
 
     # Train and test
     params['out_dir'] = 'outputs/temp/'
