@@ -6,7 +6,7 @@ __docformat__ = 'reStructuredText'
 from helpers.eval import evaluate_uni
 from helpers.models import ModelMFuni
 from helpers.utils import create_folder, wpe_joint, get_optimal_val_model_lambda
-from helpers.plotters import plot_val_ndcg_lW_lH, plot_val_ndcg_lW
+from helpers.plotters import plot_val_ndcg_mf_uni_relaxed, plot_val_ndcg_mf_uni_strict
 import numpy as np
 import os
 import time
@@ -163,9 +163,9 @@ if __name__ == '__main__':
     get_optimal_val_model_lambda('mf_uni', setting_list, variant_list, params['n_epochs'], range_lW, range_lH)
 
     # Plot the validation loss as a function of the hyperparameters
-    plot_val_ndcg_lW_lH('outputs/cold/mf_uni/relaxed/')
-    plot_val_ndcg_lW('outputs/cold/mf_uni/strict/')
-    plot_val_ndcg_lW_lH('outputs/warm/mf_uni/relaxed/')
-    plot_val_ndcg_lW('outputs/warm/mf_uni/strict/')
+    plot_val_ndcg_mf_uni_relaxed('warm')
+    plot_val_ndcg_mf_uni_strict('warm')
+    plot_val_ndcg_mf_uni_relaxed('cold')
+    plot_val_ndcg_mf_uni_strict('cold')
 
 # EOF

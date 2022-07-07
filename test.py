@@ -165,8 +165,12 @@ def train_test_ncacf(params, setting, k_split, data_dir='data/'):
         params['lW'], params['lH'] = float(hyper_opt['lW']), float(hyper_opt['lH'])
         ni_dl, inter, variant = int(hyper_opt['nl_di']), hyper_opt['inter'], hyper_opt['variant']
     else:
-        params['lW'], params['lH'] = 0.1, 1
-        ni_dl, inter, variant = 5, 'mult', 'relaxed'
+        if setting == 'warm':
+            params['lW'], params['lH'] = 0.01, 10
+            ni_dl, inter, variant = 2, 'mult', 'relaxed'
+        else:
+            params['lW'], params['lH'] = 0.01, 10
+            ni_dl, inter, variant = 2, 'mult', 'relaxed'
 
     # Train and test
     params['out_dir'] = 'outputs/temp/ncacf/split' + str(k_split) + '/'
@@ -236,7 +240,7 @@ if __name__ == '__main__':
 
                 elif model == 'dcb':
                     params['n_iter_wmf'] = 30
-                    params['n_epochs'] = 150
+                    params['n_epochs'] = 30
                     if setting == 'warm':
                         testndcg = train_test_2stages(params, setting, 'strict', k_split, data_dir=data_dir)
                     else:

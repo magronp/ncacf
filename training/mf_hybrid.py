@@ -16,7 +16,7 @@ from helpers.utils import compute_factor_wmf_deep, wpe_hybrid_strict
 from helpers.models import ModelAttributes
 from helpers.eval import evaluate_mf_hybrid, predict_attributes
 from helpers.utils import create_folder, get_optimal_val_model_lambda
-from helpers.plotters import plot_val_ndcg_lW_lH, plot_val_ndcg_lW, plot_val_mf_hybrid_epiter
+from helpers.plotters import plot_val_ndcg_mf_hybrid_relaxed, plot_val_ndcg_mf_hybrid_strict, plot_val_mf_hybrid_epiter
 import copy
 
 
@@ -320,10 +320,10 @@ if __name__ == '__main__':
 
     # Display validation results:
     # the impact of lammbda_W and lambda_H
-    plot_val_ndcg_lW_lH('outputs/cold/mf_hybrid/relaxed/')
-    plot_val_ndcg_lW('outputs/cold/mf_hybrid/strict/')
-    plot_val_ndcg_lW_lH('outputs/warm/mf_hybrid/relaxed/')
-    plot_val_ndcg_lW('outputs/warm/mf_hybrid/strict/')
+    plot_val_ndcg_mf_hybrid_relaxed('warm')
+    plot_val_ndcg_mf_hybrid_strict('warm')
+    plot_val_ndcg_mf_hybrid_relaxed('cold')
+    plot_val_ndcg_mf_hybrid_strict('cold')
 
     # the impact of N_GD
     n_ep_it_list.insert(0, 1)

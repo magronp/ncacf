@@ -4,15 +4,15 @@ __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
 import numpy as np
-from matplotlib import pyplot as plt
-#import matplotlib
-#matplotlib.use("TkAgg")
-#import matplotlib.pyplot as plt
+#from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 
 
-def plot_val_ndcg_lW_lH(path_current):
+def plot_val_ndcg_mf_hybrid_relaxed(setting):
 
-    path_ndcg = path_current + 'val_ndcg.npz'
+    path_ndcg = 'outputs/' + setting + '/mf_hybrid/relaxed/val_ndcg.npz'
 
     # Load the overall validation NDCG
     ndcg_loader = np.load(path_ndcg)
@@ -21,7 +21,7 @@ def plot_val_ndcg_lW_lH(path_current):
     n_epochs = val_ndcg.shape[-1]
 
     # Plot the results
-    plt.figure()
+    plt.figure(figsize=(8, 5.4))
     for il, l in enumerate(range_lW):
         plt.subplot(2, Nw // 2, il + 1)
         plt.plot(np.arange(n_epochs) + 1, val_ndcg[il, :, :].T)
@@ -33,13 +33,14 @@ def plot_val_ndcg_lW_lH(path_current):
     leg_lambda = [r'$\lambda_H$=' + str(lh) for lh in range_lH]
     plt.legend(leg_lambda)
     plt.show()
+    plt.tight_layout()
 
     return
 
 
-def plot_val_ndcg_lW(path_current):
+def plot_val_ndcg_mf_hybrid_strict(setting):
 
-    path_ndcg = path_current + 'val_ndcg.npz'
+    path_ndcg = 'outputs/' + setting + '/mf_hybrid/strict/val_ndcg.npz'
 
     # Load the overall validation NDCG
     ndcg_loader = np.load(path_ndcg)
@@ -48,7 +49,7 @@ def plot_val_ndcg_lW(path_current):
     n_epochs = val_ndcg.shape[-1]
 
     # Plot the results
-    plt.figure()
+    plt.figure(figsize=(8, 5.4))
     for il, l in enumerate(range_lW):
         plt.subplot(2, Nw // 2, il + 1)
         plt.plot(np.arange(n_epochs) + 1, val_ndcg[il, :].T)
@@ -58,6 +59,59 @@ def plot_val_ndcg_lW(path_current):
         if il == 0 or il == 3:
             plt.ylabel('NDCG (%)')
     plt.show()
+    plt.tight_layout()
+
+    return
+
+
+def plot_val_ndcg_mf_uni_relaxed(setting):
+
+    path_ndcg = 'outputs/' + setting + '/mf_uni/relaxed/val_ndcg.npz'
+
+    # Load the overall validation NDCG
+    ndcg_loader = np.load(path_ndcg)
+    val_ndcg, range_lW, range_lH = ndcg_loader['val_ndcg'], ndcg_loader['range_lW'], ndcg_loader['range_lH']
+    Nw = len(range_lW)
+    n_epochs = val_ndcg.shape[-1]
+
+    # Plot the results
+    plt.figure(figsize=(9.1, 2.55))
+    for il, l in enumerate(range_lW):
+        plt.subplot(1, Nw, il + 1)
+        plt.plot(np.arange(n_epochs) + 1, val_ndcg[il, :, :].T)
+        plt.title(r'$\lambda_W$=' + str(l))
+        plt.xlabel('Epochs')
+        if il == 0:
+            plt.ylabel('NDCG (%)')
+            leg_lambda = [r'$\lambda_H$=' + str(lh) for lh in range_lH]
+            plt.legend(leg_lambda)
+    plt.show()
+    plt.tight_layout()
+
+    return
+
+
+def plot_val_ndcg_mf_uni_strict(setting):
+
+    path_ndcg = 'outputs/' + setting + '/mf_uni/strict/val_ndcg.npz'
+
+    # Load the overall validation NDCG
+    ndcg_loader = np.load(path_ndcg)
+    val_ndcg, range_lW = ndcg_loader['val_ndcg'], ndcg_loader['range_lW']
+    Nw = len(range_lW)
+    n_epochs = val_ndcg.shape[-1]
+
+    # Plot the results
+    plt.figure(figsize=(9.1, 2.55))
+    for il, l in enumerate(range_lW):
+        plt.subplot(1, Nw, il + 1)
+        plt.plot(np.arange(n_epochs) + 1, val_ndcg[il, :].T)
+        plt.title(r'$\lambda_W$=' + str(l))
+        plt.xlabel('Epochs')
+        if il == 0:
+            plt.ylabel('NDCG (%)')
+    plt.show()
+    plt.tight_layout()
 
     return
 

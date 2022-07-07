@@ -4,7 +4,7 @@ __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
 from helpers.utils import create_folder
-from helpers.plotters import plot_val_ndcg_lW_lH
+from helpers.plotters import plot_val_ndcg_hybrid_relaxed
 import numpy as np
 import os
 import time
@@ -347,10 +347,5 @@ if __name__ == '__main__':
     train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
     get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
     get_optimal_wmf(params, range_lW, range_lH)
-
-    # Display validation results
-    plot_val_ndcg_lW_lH('outputs/cold/2stages/relaxed/')
-    plot_val_ndcg_lW_lH('outputs/cold/2stages/strict/')
-    plot_val_ndcg_lW_lH('outputs/warm/2stages/strict/')
 
 # EOF
