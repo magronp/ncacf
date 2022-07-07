@@ -4,7 +4,6 @@ __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
 from helpers.utils import create_folder
-from helpers.plotters import plot_val_ndcg_hybrid_relaxed
 import numpy as np
 import os
 import time
