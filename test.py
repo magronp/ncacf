@@ -50,7 +50,7 @@ def train_test_2stages(params, setting, variant, k_split, data_dir='data/'):
         params['lW'], params['lH'] = lamda_opt['lW'], lamda_opt['lH']
     else:
         if setting == 'warm' and variant == 'strict':
-            params['lW'], params['lH'] = 100, 100
+            params['lW'], params['lH'] = 100, 10
         elif setting == 'cold' and variant == 'relaxed':
             params['lW'], params['lH'] = 0.1, 1
         elif setting == 'cold' and variant == 'strict':
