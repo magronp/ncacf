@@ -4,10 +4,10 @@ __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
 import numpy as np
-#from matplotlib import pyplot as plt
-import matplotlib
-matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
+#import matplotlib
+#matplotlib.use("TkAgg")
+#import matplotlib.pyplot as plt
 
 
 def plot_val_ndcg_mf_hybrid_relaxed(setting):
