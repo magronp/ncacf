@@ -55,9 +55,9 @@ if __name__ == '__main__':
             params['n_iter_wmf'] = 30
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-            train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
-            get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
-            #get_optimal_wmf(params, range_lW, range_lH)
+            #train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            #get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
+            get_optimal_wmf(params, range_lW, range_lH)
 
         # MF-Hybrid models - training with validation, and check the impact of N_GD
         elif model == 'mf_hybrid':
