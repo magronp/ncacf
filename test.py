@@ -166,8 +166,8 @@ def train_test_ncacf(params, setting, k_split, data_dir='data/'):
         ni_dl, inter, variant = int(hyper_opt['nl_di']), hyper_opt['inter'], hyper_opt['variant']
     else:
         if setting == 'warm':
-            params['lW'], params['lH'] = 0.01, 10
-            ni_dl, inter, variant = 2, 'mult', 'relaxed'
+            params['lW'], params['lH'] = 0.1, 1
+            ni_dl, inter, variant = 4, 'mult', 'relaxed'
         else:
             params['lW'], params['lH'] = 0.01, 10
             ni_dl, inter, variant = 2, 'mult', 'relaxed'
