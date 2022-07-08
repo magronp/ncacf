@@ -55,8 +55,8 @@ if __name__ == '__main__':
             params['n_iter_wmf'] = 30
             params['n_epochs'] = 150
             range_lW, range_lH = [0.01, 0.1, 1, 10, 100, 1000], [0.001, 0.01, 0.1, 1, 10, 100]
-            #train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
-            #get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
+            train_val_wmf_2stages(setting_list, variant_list, params, range_lW, range_lH, data_dir)
+            get_optimal_2stages(setting_list, variant_list, range_lW, range_lH, params['n_epochs'])
             get_optimal_wmf(params, range_lW, range_lH)
 
         # MF-Hybrid models - training with validation, and check the impact of N_GD
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         # NCACF - training with validation (interaction model, number of layers, variant)
         elif model == 'ncacf':
             params['n_epochs'] = 100
-            #train_val_ncacf(setting_list, variant_list, params, range_inter, range_nl_di, data_dir)
+            train_val_ncacf(setting_list, variant_list, params, range_inter, range_nl_di, data_dir)
             get_optimal_ncacf(setting_list, variant_list, range_inter, range_nl_di)
 
         else:
