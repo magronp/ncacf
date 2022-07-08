@@ -46,7 +46,7 @@ By default, all models are trained and validated.
 
 ### Testing
 
-The `test.py` script train the models using optimal hyperparameters and compute the NDCG on the test set for all splits.
+The `test.py` script trains the models using optimal hyperparameters and compute the NDCG on the test set for all splits.
 Similarly to `training_validation.py`, it can be run with several arguments in order to train/test the selected models only.
 For instance:
 

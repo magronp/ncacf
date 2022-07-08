@@ -7,10 +7,7 @@ import shutil
 import numpy as np
 import torch
 import os
-import bottleneck as bn
-from scipy import sparse
 from joblib import Parallel, delayed
-from numba import jit
 
 
 def create_folder(path):
@@ -101,15 +98,6 @@ def wpe_joint(count_i, pred_rat, w, h, h_con, lW, lH=0, alpha=2.0, epsilon=1e-6)
     return loss
 
 
-# Weighted Prediction Error with negative sampling
-def wpe_joint_neg(count_pos, pred_rat_pos, pred_rat_neg, w_mlp, h_mlp, lW, lH=0, alpha=2.0, epsilon=1e-6):
-
-    loss = ((1 + alpha * torch.log(1 + count_pos / epsilon)) * (pred_rat_pos - count_pos) ** 2).mean()\
-           + (pred_rat_neg ** 2).mean() + lW * (w_mlp ** 2).mean() + lH * (h_mlp ** 2).mean()
-
-    return loss
-
-
 # Weighted Prediction Error for the in-matrix recom
 def wpe_joint_ncf(count_i, pred_rat, w_mlp, h_mlp, lW, lH=0, alpha=2.0, epsilon=1e-6):
 
@@ -117,166 +105,6 @@ def wpe_joint_ncf(count_i, pred_rat, w_mlp, h_mlp, lW, lH=0, alpha=2.0, epsilon=
            + lW * (w_mlp ** 2).mean() + lH * (h_mlp ** 2).mean()
 
     return loss
-
-
-def wpe_joint_ncacfnew(count_i, pred_rat, w_gmf, h_gmf, w_mlp, h_mlp, h_con, lW, lH=0, alpha=2.0, epsilon=1e-6):
-
-    loss = ((1 + alpha * torch.log(1 + count_i / epsilon)) * (pred_rat - count_i) ** 2).mean()\
-           + lW * (w_gmf ** 2 + w_mlp ** 2).mean() + lH * ((h_con - h_mlp) ** 2 + (h_con - h_gmf) ** 2).mean()
-
-    return loss
-
-
-# Generate of list of user indexes for each batch
-def user_idx_generator(n_users, batch_users):
-    for start in range(0, n_users, batch_users):
-        end = min(n_users, start + batch_users)
-        yield slice(start, end)
-
-
-# NDCG for out-of-matrix prediction
-def my_ndcg_cold(true_ratings, pred_ratings, batch_users=5000, k=None):
-
-    # Iterate over user batches
-    res = list()
-    for user_idx in user_idx_generator(true_ratings.shape[0], batch_users):
-        true_ratings_batch = true_ratings[user_idx]
-        pred_ratings_batch = pred_ratings[user_idx, :]
-        if k is None:
-            ndcg_curr_batch = my_ndcg_batch(true_ratings_batch, pred_ratings_batch)
-        else:
-            ndcg_curr_batch = my_ndcg_k_batch(true_ratings_batch, pred_ratings_batch, k)
-        res.append(ndcg_curr_batch)
-
-    # Get the mean and std NDCG over users
-    ndcg = np.hstack(res)
-    # Replace 0s with Nans to take nanmean and avoid warnings
-    ndcg[ndcg == 0] = np.nan
-    ndcg_mean = np.nanmean(ndcg)
-
-    return ndcg_mean
-
-
-# NDCG for a given batch
-def my_ndcg_batch(true_ratings, pred_ratings):
-
-    all_rank = np.argsort(np.argsort(-pred_ratings, axis=1), axis=1)
-
-    # build the discount template
-    tp = 1. / np.log2(np.arange(2, true_ratings.shape[1] + 2))
-    all_disc = tp[all_rank]
-
-    # Binarize the true ratings
-    true_ratings_bin = (true_ratings > 0).tocoo()
-
-    # Get the disc
-    disc = sparse.csr_matrix((all_disc[true_ratings_bin.row, true_ratings_bin.col],
-                              (true_ratings_bin.row, true_ratings_bin.col)),
-                             shape=all_disc.shape)
-
-    # DCG, ideal DCG and normalized DCG
-    dcg = np.array(disc.sum(axis=1)).ravel()
-    idcg = np.array([tp[:n].sum() for n in true_ratings.getnnz(axis=1)])
-    ndcg = dcg / (idcg + 1e-8)
-
-    return ndcg
-
-
-# NDCG at k for a given batch
-def my_ndcg_k_batch(true_ratings, pred_ratings, k=100):
-
-    n_users_currbatch = true_ratings.shape[0]
-    idx_topk_part = bn.argpartition(-pred_ratings, k, axis=1)
-    topk_part = pred_ratings[np.arange(n_users_currbatch)[:, np.newaxis], idx_topk_part[:, :k]]
-    idx_part = np.argsort(-topk_part, axis=1)
-    idx_topk = idx_topk_part[np.arange(n_users_currbatch)[:, np.newaxis], idx_part]
-
-    # build the discount template
-    tp = 1. / np.log2(np.arange(2, k + 2))
-
-    dcg = (true_ratings[np.arange(n_users_currbatch)[:, np.newaxis], idx_topk].toarray() * tp).sum(axis=1)
-    idcg = np.array([(tp[:min(n, k)]).sum() for n in true_ratings.getnnz(axis=1)])
-    ndcg = dcg / (idcg + 1e-8)
-
-    return ndcg
-
-
-# NDCG
-def my_ndcg_in(true_ratings, pred_ratings, batch_users=5000, k=None, leftout_ratings=None):
-
-    n_users, n_songs = true_ratings.shape
-    predicted_ratings = np.copy(pred_ratings)
-
-    # Remove predictions on the left-out ratings ('train' for validation, and 'train+val' for testing)
-    if leftout_ratings is not None:
-        item_idx = np.zeros((n_users, n_songs), dtype=bool)
-        item_idx[leftout_ratings.nonzero()] = True
-        predicted_ratings[item_idx] = -np.inf
-
-    # Loop over user batches
-    res = list()
-    for user_idx in user_idx_generator(n_users, batch_users):
-        # Take a batch
-        true_ratings_batch = true_ratings[user_idx]
-        pred_ratings_batch = predicted_ratings[user_idx, :]
-        # Call the NDCG for the current batch (depending on k)
-        # If k not specified, compute the whole (standard) NDCG instead of its truncated version NDCG@k
-        if k is None:
-            ndcg_curr_batch = my_ndcg_in_batch(true_ratings_batch, pred_ratings_batch)
-        else:
-            ndcg_curr_batch = my_ndcg_in_k_batch(true_ratings_batch, pred_ratings_batch, k)
-        res.append(ndcg_curr_batch)
-
-    # Stack and get mean and std over users
-    ndcg = np.hstack(res)
-    # Replace 0s with Nans to take nanmean and avoid warnings
-    ndcg[ndcg == 0] = np.nan
-    ndcg_mean = np.nanmean(ndcg)
-    ndcg_std = np.nanstd(ndcg)
-
-    return ndcg_mean, ndcg_std
-
-
-def my_ndcg_in_batch(true_ratings, pred_ratings):
-
-    all_rank = np.argsort(np.argsort(-pred_ratings, axis=1), axis=1)
-
-    # build the discount template
-    tp = 1. / np.log2(np.arange(2, true_ratings.shape[1] + 2))
-    all_disc = tp[all_rank]
-
-    # Binarize the true ratings
-    true_ratings_bin = (true_ratings > 0).tocoo()
-
-    # Get the disc
-    disc = sparse.csr_matrix((all_disc[true_ratings_bin.row, true_ratings_bin.col],
-                              (true_ratings_bin.row, true_ratings_bin.col)),
-                             shape=all_disc.shape)
-
-    # DCG, ideal DCG and normalized DCG
-    dcg = np.array(disc.sum(axis=1)).ravel()
-    idcg = np.array([tp[:n].sum() for n in true_ratings.getnnz(axis=1)])
-    ndcg = dcg / (idcg + 1e-8)
-
-    return ndcg
-
-
-def my_ndcg_in_k_batch(true_ratings_batch, pred_ratings_batch, k=100):
-
-    n_users_currbatch = true_ratings_batch.shape[0]
-    idx_topk_part = bn.argpartition(-pred_ratings_batch, k, axis=1)
-    topk_part = pred_ratings_batch[np.arange(n_users_currbatch)[:, np.newaxis], idx_topk_part[:, :k]]
-    idx_part = np.argsort(-topk_part, axis=1)
-    idx_topk = idx_topk_part[np.arange(n_users_currbatch)[:, np.newaxis], idx_part]
-
-    # build the discount template
-    tp = 1. / np.log2(np.arange(2, k + 2))
-
-    dcg = (true_ratings_batch[np.arange(n_users_currbatch)[:, np.newaxis], idx_topk].toarray() * tp).sum(axis=1)
-    idcg = np.array([(tp[:min(n, k)]).sum() for n in true_ratings_batch.getnnz(axis=1)])
-    ndcg = dcg / (idcg + 1e-8)
-
-    return ndcg
 
 
 # ALS updates for the WMF model
@@ -339,20 +167,6 @@ def compute_factor_wmf_deep(Y, S, lambda_reg, content_prior=None, dtype='float32
     X_new = np.concatenate(res, axis=0)
 
     return X_new
-
-
-# Adapted to python 3 with Jit
-@jit
-def inner_prod(W, H, rows, cols):
-    n_ratings = rows.size
-    n_components = W.shape[1]
-    assert H.shape[1] == n_components
-    data = np.empty(n_ratings)
-    for i in range(n_ratings):
-        data[i] = 0.0
-        for j in range(n_components):
-            data[i] += W[rows[i], j] * H[cols[i], j]
-    return data
 
 # EOF
 
