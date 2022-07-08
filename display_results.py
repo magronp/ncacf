@@ -64,7 +64,6 @@ print(' Strict  - MF Uni    - NDCG: ', perf_mf_uni[1, 1, 0], '%', ' Time: ', per
 # NCACF validation results (impact of variant, interaction model, and number of layers)
 plot_val_ndcg_ncacf()
 
-
 # Test results
 model_list = ['wmf', 'dcb', 'cdl', 'dcue', 'cccfnet', 'ncf', 'ncacf']
 setting_list = ['warm', 'cold']

@@ -4,10 +4,10 @@ __author__ = 'Paul Magron -- INRIA Nancy - Grand Est, France'
 __docformat__ = 'reStructuredText'
 
 import numpy as np
-from matplotlib import pyplot as plt
-#import matplotlib
-#matplotlib.use("TkAgg")
-#import matplotlib.pyplot as plt
+#from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 
 
 def plot_val_ndcg_mf_hybrid_relaxed(setting):
@@ -160,25 +160,35 @@ def plot_val_ndcg_ncf():
 
 def plot_val_ndcg_ncacf():
 
-    val_ndcg_warm = np.load('outputs/warm/ncacf/val_results.npz')['val_ndcg'][:, 1:, :]
-    val_ndcg_cold = np.load('outputs/cold/ncacf/val_results.npz')['val_ndcg'][:, 1:, :]
+    val_ndcg_warm = np.round(np.load('outputs/warm/ncacf/val_results.npz')['val_ndcg'][:, 1:, :]*100, 1)
+    val_ndcg_cold = np.round(np.load('outputs/cold/ncacf/val_results.npz')['val_ndcg'][:, 1:, :]*100, 1)
 
-    plt.figure(0)
-    plt.subplot(2, 2, 1)
+    plt.figure(figsize=(6.75, 3.2))
+    plt.subplot(1, 2, 1)
     plt.title('Warm-start')
     plt.plot(val_ndcg_warm[0, :, :])
     plt.ylabel('NDCG (%)')
     plt.legend(['Relaxed', 'Strict'])
-    plt.subplot(2, 2, 2)
+    plt.xlabel('Q')
+    plt.subplot(1, 2, 2)
     plt.title('Cold-start')
     plt.plot(val_ndcg_cold[0, :, :])
-    plt.subplot(2, 2, 3)
+    plt.xlabel('Q')
+    plt.show()
+    plt.tight_layout()
+
+    plt.figure(figsize=(6.75, 3.2))
+    plt.subplot(1, 2, 1)
     plt.plot(val_ndcg_warm[1, :, :])
+    plt.title('Warm-start')
     plt.ylabel('NDCG (%)')
     plt.xlabel('Q')
-    plt.subplot(2, 2, 4)
+    plt.subplot(1, 2, 2)
     plt.plot(val_ndcg_cold[1, :, :])
+    plt.title('Cold-start')
     plt.xlabel('Q')
+    plt.show()
+    plt.tight_layout()
 
     return
 
